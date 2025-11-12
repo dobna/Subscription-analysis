@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_first_app/screens/subscription_screen.dart';
+import 'screens/subscription_screen.dart';
 void main() {
   runApp(MyApp());
 }
