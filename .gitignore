@@ -45,9 +45,15 @@ app.*.map.json
 /android/app/release
 
 # Flutter build directories
-android/
-ios/
 build/
 .dart_tool/
 .pub-cache/
 .pub/
+
+# Flutter platforms
+android/
+ios/
+linux/
+macos/
+web/
+windows/
