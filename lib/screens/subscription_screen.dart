@@ -281,7 +281,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(context, MaterialPageRoute(
-                            builder: (context) => ProfileScreen(),
+                            builder: (context) => ProfileScreen(subscriptions: subscriptions),
                           ));
                         },
                   ),                   

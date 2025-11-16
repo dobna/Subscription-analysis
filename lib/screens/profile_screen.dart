@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'archive_screen.dart';
+import 'package:my_first_app/models/subscription.dart';
 
 // class ProfileScreen extends StatelessWidget {
 //   const ProfileScreen({Key? key}) : super(key: key);
@@ -14,7 +15,9 @@ import 'archive_screen.dart';
 // }
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  final List<Subscription> subscriptions; // Добавляем получение списка подписок
+
+  const ProfileScreen({Key? key, required this.subscriptions}) : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -30,7 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _userName = "Иван Иванов";
   String _userEmail = "ivan@example.com";
   String _userPhone = "+7 (900) 123-45-67";
-  String _avatarUrl = "https://via.placeholder.com/150"; // Заглушка для аватарки
+  String _avatarUrl = "https://via.placeholder.com/150";
 
   @override
   void initState() {
@@ -44,7 +47,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _isEditing = !_isEditing;
       if (!_isEditing) {
-        // Сохраняем изменения при выходе из режима редактирования
         _saveChanges();
       }
     });
@@ -56,14 +58,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _userEmail = _emailController.text;
       _userPhone = _phoneController.text;
     });
-    // Здесь можно добавить логику сохранения на сервер
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Изменения сохранены')),
     );
   }
 
+  // Обновляем функцию перехода в архив
+  void _navigateToArchive() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ArchiveScreen(subscriptions: widget.subscriptions),
+      ),
+    );
+  }
 
-  // Функция для выбора аватарки (заглушка)
   void _changeAvatar() {
     if (_isEditing) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -161,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             SizedBox(height: 32),
 
-            // Архив подписок
+            // Архив подписок - обновляем onTap
             _buildArchiveButton(),
           ],
         ),
@@ -238,7 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Кнопка архива подписок
+  // Кнопка архива подписок - обновляем onTap
   Widget _buildArchiveButton() {
     return Container(
       decoration: BoxDecoration(
@@ -262,12 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-        onTap: () {
-          Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ArchiveScreen()),
-          );
-        }
+        onTap: _navigateToArchive, // Используем обновленную функцию
       ),
     );
   }
