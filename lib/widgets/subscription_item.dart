@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../models/subscription.dart';
+import 'package:my_first_app/models/subscription.dart';
 
 class SubscriptionItem extends StatefulWidget {
   final Subscription subscription;
-  final Function(Subscription) onUpdate; // Передает обновленную подписку
-  final Function(String) onArchive;      // Передает ID для архивации
+  final Function(Subscription) onUpdate;
+  final Function(String) onArchive;
 
   const SubscriptionItem({
     Key? key,
@@ -13,14 +13,14 @@ class SubscriptionItem extends StatefulWidget {
     required this.onUpdate,
     required this.onArchive,
   }) : super(key: key);
-  
+
   @override
   _SubscriptionItemState createState() => _SubscriptionItemState();
 }
 
 class _SubscriptionItemState extends State<SubscriptionItem> {
-  bool isExpanded = false; // раскрыт или свернут
-  bool isEditing = false; // режим редактирования
+  bool isExpanded = false;
+  bool isEditing = false;
   
   late TextEditingController _nameController;
   late TextEditingController _amountController;
@@ -28,7 +28,7 @@ class _SubscriptionItemState extends State<SubscriptionItem> {
   late DateTime _nextPaymentDate;
   late bool _isTrial;
   late BillingCycle _billingCycle;
-  late int _billingDay;
+  late String _selectedCategory; // Добавляем переменную для категории
 
   @override
   void initState() {
@@ -43,7 +43,7 @@ class _SubscriptionItemState extends State<SubscriptionItem> {
     _nextPaymentDate = widget.subscription.nextPaymentDate;
     _isTrial = widget.subscription.isTrial;
     _billingCycle = widget.subscription.billingCycle;
-    _billingDay = widget.subscription.billingDay;
+    _selectedCategory = widget.subscription.category; // Инициализируем категорию
   }
 
   void _toggleExpanded() {
@@ -99,7 +99,7 @@ class _SubscriptionItemState extends State<SubscriptionItem> {
       notifyDays: newNotifyDays ?? widget.subscription.notifyDays,
       priceHistory: updatedPriceHistory,
       billingCycle: _billingCycle,
-      billingDay: _billingDay,
+      category: _selectedCategory, // Сохраняем выбранную категорию
     );
 
     widget.onUpdate(updatedSubscription);
@@ -226,7 +226,7 @@ class _SubscriptionItemState extends State<SubscriptionItem> {
         _buildDetailRow('Дата подключения:', 
             DateFormat('dd.MM.yyyy').format(widget.subscription.connectedDate)),
         _buildDetailRow('Периодичность:', widget.subscription.getBillingCycleText()),
-        _buildDetailRow('День списания:', '${widget.subscription.billingDay} число'),
+        _buildDetailRow('Категория:', widget.subscription.category),
         _buildDetailRow('Пробная подписка:', widget.subscription.isTrial ? 'Да' : 'Нет'),
         _buildDetailRow('Оповещать за:', '${widget.subscription.notifyDays} дней'),
         _buildDetailRow('До списания:', '${widget.subscription.daysUntilPayment} дней'),
@@ -359,7 +359,30 @@ class _SubscriptionItemState extends State<SubscriptionItem> {
         ),
         SizedBox(height: 12),
         
-        // Выбор даты следующего списания
+        // Выбор категории при редактировании
+        DropdownButtonFormField<String>(
+          value: _selectedCategory,
+          decoration: InputDecoration(
+            labelText: 'Категория',
+            border: OutlineInputBorder(),
+          ),
+          items: [
+            'Музыка', 'Видео', 'Книги', 'Соцсети', 'Игры', 'Образование', 'Другое'
+          ].map((category) {
+            return DropdownMenuItem(
+              value: category,
+              child: Text(category),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedCategory = value ?? 'Другое';
+            });
+          },
+        ),
+        SizedBox(height: 12),
+        
+        // Поле даты
         TextFormField(
           controller: TextEditingController(
             text: DateFormat('dd.MM.yyyy').format(_nextPaymentDate),
@@ -367,65 +390,58 @@ class _SubscriptionItemState extends State<SubscriptionItem> {
           readOnly: true,
           onTap: _selectDate,
           decoration: InputDecoration(
-            labelText: 'Дата следующего списания',
+            labelText: _isTrial ? 'Дата окончания пробного периода' : 'Дата следующего списания',
             border: OutlineInputBorder(),
             suffixIcon: Icon(Icons.calendar_today),
           ),
         ),
         SizedBox(height: 12),
         
+        // Поле стоимости с логикой для пробной подписки
         TextFormField(
           controller: _amountController,
           keyboardType: TextInputType.number,
+          enabled: !_isTrial,
           decoration: InputDecoration(
-            labelText: 'Стоимость',
+            labelText: _isTrial ? 'Стоимость (бесплатный пробный период)' : 'Стоимость',
             border: OutlineInputBorder(),
             suffixText: 'руб.',
           ),
         ),
         SizedBox(height: 12),
         
-        // Периодичность
-        DropdownButtonFormField<BillingCycle>(
-          value: _billingCycle,
-          decoration: InputDecoration(
-            labelText: 'Периодичность',
-            border: OutlineInputBorder(),
-          ),
-          items: BillingCycle.values.map((cycle) {
-            return DropdownMenuItem<BillingCycle>(
-              value: cycle,
-              child: Text(_getBillingCycleText(cycle)),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              _billingCycle = value ?? BillingCycle.monthly;
-            });
-          },
-        ),
-        SizedBox(height: 12),
-        
-        // День списания
-        TextFormField(
-          controller: TextEditingController(text: _billingDay.toString()),
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: 'День списания (1-31)',
-            border: OutlineInputBorder(),
-          ),
-          onChanged: (value) {
-            final day = int.tryParse(value);
-            if (day != null && day >= 1 && day <= 31) {
+        // Периодичность (только для не пробных подписок)
+        if (!_isTrial) ...[
+          DropdownButtonFormField<BillingCycle>(
+            value: _billingCycle,
+            decoration: InputDecoration(
+              labelText: 'Периодичность',
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              DropdownMenuItem(
+                value: BillingCycle.monthly,
+                child: Text('Ежемесячно'),
+              ),
+              DropdownMenuItem(
+                value: BillingCycle.quarterly,
+                child: Text('Ежеквартально'),
+              ),
+              DropdownMenuItem(
+                value: BillingCycle.yearly,
+                child: Text('Ежегодно'),
+              ),
+            ],
+            onChanged: (value) {
               setState(() {
-                _billingDay = day;
+                _billingCycle = value ?? BillingCycle.monthly;
               });
-            }
-          },
-        ),
-        SizedBox(height: 12),
+            },
+          ),
+          SizedBox(height: 12),
+        ],
         
-        
+        // Чекбокс пробной подписки
         Row(
           children: [
             Checkbox(
@@ -433,6 +449,9 @@ class _SubscriptionItemState extends State<SubscriptionItem> {
               onChanged: (value) {
                 setState(() {
                   _isTrial = value ?? false;
+                  if (_isTrial) {
+                    _amountController.text = '0';
+                  }
                 });
               },
             ),
@@ -471,17 +490,6 @@ class _SubscriptionItemState extends State<SubscriptionItem> {
         ),
       ],
     );
-  }
-
-  String _getBillingCycleText(BillingCycle cycle) {
-    switch (cycle) {
-      case BillingCycle.monthly:
-        return 'Ежемесячно';
-      case BillingCycle.yearly:
-        return 'Ежегодно';
-      case BillingCycle.quarterly:
-        return 'Ежеквартально';
-    }
   }
 
   @override
