@@ -5,7 +5,8 @@ from backend.database import SessionLocal
 from backend.models.user import User
 from backend.utils.security import  hash_password, verify_password, create_access_token, create_refresh_token,decode_refresh_token, decode_access_token
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordRequestForm
-
+from backend.schemas.user import UserRegister, UserLogin
+from ..schemas.user import UserRegister, UserLogin
 router = APIRouter()
 security = HTTPBearer()
 
