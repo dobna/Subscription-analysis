@@ -132,12 +132,18 @@ components:
           type: string
           enum: ["music", "video", "books", "games", "education", "social", "other"]
           example: "video"
-        isTrial:
+        # isTrial:
+        #   type: boolean
+        #   default: false
+        #   description: |
+        #     Trial-период. Определяется при создании и не может быть изменен.
+        #     Для завершения trial создайте новую подписку.
+        notificationsEnabled:
+          type: boolean
+          default: true
+        autoRenewal:
           type: boolean
           default: false
-          description: |
-            Trial-период. Определяется при создании и не может быть изменен.
-            Для завершения trial создайте новую подписку.
         notifyDays:
           type: integer
           minimum: 1
@@ -147,21 +153,12 @@ components:
           type: string
           enum: ["monthly", "quarterly", "yearly"]
           example: "monthly"
-        billingDay:
-          type: integer
-          minimum: 1
-          maximum: 31
-          example: 20
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
-        # Уведомления
-        notificationsEnabled:
-          type: boolean
-          default: true
       required:
         - id
         - userId
@@ -170,7 +167,6 @@ components:
         - connectedDate
         - category
         - billingCycle
-        - billingDay
 
     # История цен 
     PriceHistory:
@@ -234,9 +230,9 @@ components:
         category:
           type: string
           enum: ["music", "video", "books", "games", "education", "social", "other"]
-        isTrial:
-          type: boolean
-          default: false
+        # isTrial:
+        #   type: boolean
+        #   default: false
         notifyDays:
           type: integer
           minimum: 1
@@ -245,10 +241,6 @@ components:
         billingCycle:
           type: string
           enum: ["monthly", "quarterly", "yearly"]
-        billingDay:
-          type: integer
-          minimum: 1
-          maximum: 31
         # Автоматически устанавливаются на сервере:
         # - connectedDate = текущая дата
         # - icon, color на основе категории
@@ -257,7 +249,7 @@ components:
         - nextPaymentDate
         - category
         - billingCycle
-        - billingDay
+
 
     # Обновление подписки
     UpdateSubscriptionRequest:
