@@ -230,3 +230,5 @@ dist
 # Temporary folders
 tmp/
 temp/
+
+backend/subscriptions.db
