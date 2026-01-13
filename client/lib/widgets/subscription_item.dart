@@ -51,7 +51,7 @@ class _SubscriptionItemState extends State<SubscriptionItem> {
   void _initializeControllers() {
     _nameController = TextEditingController(text: widget.subscription.name);
     _amountController = TextEditingController(
-      text: (widget.subscription.currentAmount / 100).toStringAsFixed(2),
+      text: (widget.subscription.currentAmount).toStringAsFixed(2),
     );
     _notifyDaysController = TextEditingController(
       text: widget.subscription.notifyDays.toString(),
@@ -86,7 +86,7 @@ class _SubscriptionItemState extends State<SubscriptionItem> {
   }
 
   void _saveChanges() {
-    final newAmount = (double.tryParse(_amountController.text) ?? 0) * 100;
+    final newAmount = (double.tryParse(_amountController.text) ?? 0);
     final newNotifyDays = int.tryParse(_notifyDaysController.text);
 
     final updatedSubscription = widget.subscription.copyWith(
@@ -201,7 +201,7 @@ class _SubscriptionItemState extends State<SubscriptionItem> {
           ),
         ),
         SizedBox(width: 12),
-        
+
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,7 +362,7 @@ class _SubscriptionItemState extends State<SubscriptionItem> {
       child: Row(
         children: [
           Text(
-            '${(history.amount / 100).toStringAsFixed(2)} руб.',
+            '${history.amount} руб.',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           ),
           SizedBox(width: 8),
