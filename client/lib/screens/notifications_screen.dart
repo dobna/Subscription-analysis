@@ -175,14 +175,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.read<AuthProvider>();
-    final notificationProvider = context.read<NotificationProvider>();
+    final authProvider = context.watch<AuthProvider>();
+    final notificationProvider = context.watch<NotificationProvider>();
 
     // Инициализация токена, если он еще не установлен
-    if (authProvider.user?.token != null && 
-        notificationProvider.authToken == null) {
+    if (!authProvider.isAuthenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        notificationProvider.setAuthToken(authProvider.user!.token);
+        // notificationProvider.setAuthToken(authProvider.user!.token);
         notificationProvider.loadNotificationGroups();
       });
     }
