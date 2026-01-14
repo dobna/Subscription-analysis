@@ -21,10 +21,8 @@ from backend.routes.auth import get_current_user
 router = APIRouter(prefix="/api", tags=["analytics"])
 
 def calculate_period_dates(period_type: PeriodType, year: int, month: Optional[int] = None, quarter: Optional[int] = None) -> tuple[date, date]:
-    """Рассчитывает даты начала и конца периода для аналитики"""
     today = date.today()
     
-    # Явная проверка для month типа периода
     if period_type == PeriodType.month:
         if month is None:
             raise HTTPException(status_code=400, detail="Month parameter is required for monthly period")
@@ -33,20 +31,17 @@ def calculate_period_dates(period_type: PeriodType, year: int, month: Optional[i
         period_start = date(year, month, 1)
         period_end = date(year, month, 1) + relativedelta(months=1) - relativedelta(days=1)
     
-    # Явная проверка для quarter типа периода
     elif period_type == PeriodType.quarter:
         if quarter is None:
             raise HTTPException(status_code=400, detail="Quarter parameter is required for quarterly period")
         if quarter < 1 or quarter > 4:
             raise HTTPException(status_code=400, detail="Invalid quarter")
         
-        # Определяем месяц начала квартала
         start_month = (quarter - 1) * 3 + 1
         period_start = date(year, start_month, 1)
         period_end = date(year, start_month, 1) + relativedelta(months=3) - relativedelta(days=1)
     
     elif period_type == PeriodType.year:
-        # Для годового периода игнорируем month и quarter, если они переданы
         period_start = date(year, 1, 1)
         period_end = date(year, 12, 31)
     
@@ -56,7 +51,6 @@ def calculate_period_dates(period_type: PeriodType, year: int, month: Optional[i
     return period_start, period_end
 
 def get_category_name(category_value: str) -> str:
-    """Получает отображаемое имя категории"""
     try:
         category_enum = Sub_category(category_value)
         return category_enum.value
@@ -72,37 +66,22 @@ def get_overall_analytics(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    Получить общую аналитику по всем категориям за указанный период.
-    
-    Логика расчета: 
-    1. Берем ВСЕ подписки пользователя (включая архивные)
-    2. Для каждой подписки берем записи из истории цен, где startDate >= начала периода
-    3. Суммируем amount по категориям
-    """
-    
     # Валидация параметров
     if period == PeriodType.month and month is None:
         raise HTTPException(status_code=400, detail="Month is required for monthly period")
     if period == PeriodType.quarter and quarter is None:
         raise HTTPException(status_code=400, detail="Quarter is required for quarterly period")
     
-    # Рассчитываем даты периода
     try:
         period_start, period_end = calculate_period_dates(period, year, month, quarter)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid date parameters: {str(e)}")
     
-    print(f"📊 Рассчет аналитики за период: {period_start} - {period_end}")
-    
-    # Получаем ВСЕ подписки пользователя (включая архивные)
     all_subscriptions = db.query(Subscription).filter(
         Subscription.userId == current_user.id
-        # УБИРАЕМ фильтр по архиву: Subscription.archivedDate.is_(None)
     ).all()
     
     if not all_subscriptions:
-        # Возвращаем пустой ответ, если нет подписок
         period_info = PeriodInfo(
             type=period,
             month=month,
@@ -117,8 +96,6 @@ def get_overall_analytics(
     
     subscription_ids = [sub.id for sub in all_subscriptions]
     
-    # Получаем записи истории цен для всех подписок за период
-    # Берем записи, где startDate >= начала периода (не ограничиваем сверху текущей датой)
     price_history_records = db.query(PriceHistory).filter(
         PriceHistory.subscriptionId.in_(subscription_ids),
         PriceHistory.startDate >= period_start
@@ -133,7 +110,6 @@ def get_overall_analytics(
         if category:
             category_totals[category] = category_totals.get(category, 0) + record.amount
     
-    # Вычисляем общую сумму
     total_amount = sum(category_totals.values())
     
     # Формируем список категорий с процентами
@@ -147,7 +123,6 @@ def get_overall_analytics(
             percentage=round(percentage, 2)
         ))
     
-    # Создаем информацию о периоде
     period_info = PeriodInfo(
         type=period,
         month=month,
@@ -171,14 +146,6 @@ def get_category_analytics(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    Получить детализированную аналитику по конкретной категории.
-    
-    Возвращает:
-    - Общую сумму по категории
-    - Список всех подписок в этой категории (включая архивные) с их вкладом
-    """
-    
     # Валидация параметров
     if period == PeriodType.month and month is None:
         raise HTTPException(status_code=400, detail="Month is required for monthly period")
@@ -196,15 +163,12 @@ def get_category_analytics(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid date parameters: {str(e)}")
     
-    print(f"📊 Рассчет аналитики для категории '{category}' за период: {period_start} - {period_end}")
-    
     category_subscriptions = db.query(Subscription).filter(
         Subscription.userId == current_user.id,
         Subscription.category == category
     ).all()
     
     if not category_subscriptions:
-        # Возвращаем ответ с нулевыми значениями, если нет подписок в категории
         period_info = PeriodInfo(
             type=period,
             month=month,
@@ -221,7 +185,6 @@ def get_category_analytics(
     subscription_ids = [sub.id for sub in category_subscriptions]
     subscription_map = {sub.id: sub for sub in category_subscriptions}
     
-    # Получаем записи истории цен для всех подписок в категории за период
     price_history_records = db.query(PriceHistory).filter(
         PriceHistory.subscriptionId.in_(subscription_ids),
         PriceHistory.startDate >= period_start
@@ -232,8 +195,6 @@ def get_category_analytics(
     for record in price_history_records:
         subscription = subscription_map.get(record.subscriptionId)
         if subscription:
-            # ПРОВЕРЯЕМ: была ли подписка активна в этот период?
-            # Определяем период активности подписки на основе billingCycle
             if subscription.billingCycle == Sub_period.monthly:
                 active_until = record.startDate + relativedelta(months=1)
             elif subscription.billingCycle == Sub_period.quarterly:
@@ -241,19 +202,15 @@ def get_category_analytics(
             elif subscription.billingCycle == Sub_period.yearly:
                 active_until = record.startDate + relativedelta(years=1)
             else:
-                active_until = record.startDate + relativedelta(months=1)  # fallback
+                active_until = record.startDate + relativedelta(months=1)
             
-            # Если подписка была активна в течение анализируемого периода
             if active_until > period_start:
                 subscription_totals[record.subscriptionId] = subscription_totals.get(record.subscriptionId, 0) + record.amount
     
-    # Вычисляем общую сумму по категории
     total_amount = sum(subscription_totals.values())
     
-    # Формируем список подписок с процентами (ТОЛЬКО те, что были активны в периоде)
     subscriptions_list = []
     
-    # Добавляем только подписки, у которых были расходы в этом периоде
     for sub_id, amount in sorted(subscription_totals.items(), key=lambda x: x[1], reverse=True):
         subscription = subscription_map.get(sub_id)
         if subscription:
@@ -265,11 +222,7 @@ def get_category_analytics(
                 total=amount,
                 percentage=round(percentage, 2)
             ))
-    
-    # НЕ добавляем подписки без расходов в этом периоде
-    # Они не были активны в анализируемом периоде
-    
-    # Создаем информацию о периоде
+            
     period_info = PeriodInfo(
         type=period,
         month=month,

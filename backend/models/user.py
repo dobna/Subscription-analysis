@@ -9,6 +9,5 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     password = Column(String)
 
-     # Добавляем связь с подписками
     subscriptions = relationship("Subscription", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship( "Notification", back_populates="user", cascade="all, delete-orphan" )

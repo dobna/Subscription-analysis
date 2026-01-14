@@ -21,7 +21,7 @@ class Sub_period(str, Enum):
     yearly = "yearly"
 
 class PriceHistory(Base):
-    __tablename__ = "price_history"  # Исправляем опечатку в названии таблицы
+    __tablename__ = "price_history"
 
     id = Column(Integer, primary_key=True, index=True)
     subscriptionId = Column(Integer, ForeignKey("subscriptions.id"), nullable=False, index=True)
@@ -56,7 +56,6 @@ class Subscription(Base):
     price_history = relationship("PriceHistory", back_populates="subscription", cascade="all, delete-orphan")
     
     def calculate_next_payment_date(self, from_date: date = None):
-        """Рассчитывает следующую дату платежа на основе даты подключения и периода"""
         if not from_date:
             from_date = self.nextPaymentDate or self.connectedDate or date.today()
         

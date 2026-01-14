@@ -6,7 +6,6 @@ import uuid
 
 
 class NotificationBase(BaseModel):
-    """Схема для создания уведомлений"""
     type: str
     title: str
     message: str
@@ -15,11 +14,10 @@ class NotificationBase(BaseModel):
 
 
 class NotificationResponse(BaseModel):
-    """Схема для ответа при получении уведомлений"""
     model_config = ConfigDict(from_attributes=True)
 
-    id: str  # ✅ Меняем с uuid.UUID на str
-    user_id: str  # ✅ Меняем с uuid.UUID на str
+    id: str
+    user_id: str
     subscription_id: int
     type: str
     title: str
@@ -30,7 +28,7 @@ class NotificationResponse(BaseModel):
     action_url: Optional[str] = None
     created_at: datetime
 
-    # ✅ Добавляем валидатор для безопасного преобразования
+    #Добавляем валидатор для безопасного преобразования
     @field_validator('id', 'user_id', mode='before')
     @classmethod
     def convert_to_string(cls, v):
@@ -44,7 +42,6 @@ class NotificationResponse(BaseModel):
 
 
 class NotificationGroup(BaseModel):
-    """Схема для группировки уведомлений по подпискам (для фронтенда)"""
     subscription_id: int
     subscription_name: str
     subscription_amount: float
@@ -55,11 +52,9 @@ class NotificationGroup(BaseModel):
 
 
 class NotificationReadRequest(BaseModel):
-    """Схема для запроса на прочтение уведомления"""
     read: bool = True
 
 
 class ReadAllResponse(BaseModel):
-    """Схема для ответа при прочтении всех уведомлений"""
     message: str
     count: int

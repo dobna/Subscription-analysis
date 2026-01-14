@@ -1,4 +1,3 @@
-# backend/routes/notification.py
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -19,10 +18,6 @@ async def get_notifications_grouped_by_subscription(
         current_user=Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    """
-    Главный endpoint: получить уведомления, сгруппированные как чаты
-    Используется для главного экрана со списком подписок
-    """
     # Получаем все уведомления пользователя
     notifications = db.query(Notification).filter(
         Notification.user_id == str(current_user.id)
@@ -104,10 +99,6 @@ async def get_subscription_notifications(
         current_user=Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    """
-    Получить все уведомления конкретной подписки
-    Используется при открытии "чата" с подпиской
-    """
     # Проверяем, существует ли подписка у пользователя
     subscription = db.query(Subscription).filter(
         and_(
@@ -152,10 +143,6 @@ async def mark_subscription_notifications_read(
         current_user=Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    """
-    Пометить ВСЕ уведомления конкретной подписки как прочитанные
-    Вызывается при открытии окна переписки с подпиской
-    """
     # Проверяем, существует ли подписка у пользователя
     subscription = db.query(Subscription).filter(
         and_(

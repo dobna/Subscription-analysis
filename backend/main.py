@@ -15,7 +15,6 @@ init_db()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ИЗМЕНЕНИЕ 1: Добавить название и docs (2 строки)
 app = FastAPI(
     title="Subscription Analyzer API",
     docs_url="/docs"

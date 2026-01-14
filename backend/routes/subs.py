@@ -23,14 +23,7 @@ from backend.services.notifications_service import NotificationService
 router = APIRouter(prefix="/api", tags=["subscriptions"])
 
 def update_price_history(db: Session, subscription_id: int, new_amount: int):
-    """
-    Обновляет историю цен для подписки.
-    Закрывает текущую активную запись и создает новую.
-    Гарантирует отсутствие пересекающихся периодов.
-    """
-    print(f"🔄 Обновление истории цен для подписки ID: {subscription_id}, новая сумма: {new_amount}")
-    
-    # Находим текущую активную запись в истории цен (без endDate)
+    # Находим текущую активную запись в истории цен
     current_price = db.query(PriceHistory).filter(
         and_(
             PriceHistory.subscriptionId == subscription_id,
@@ -41,16 +34,11 @@ def update_price_history(db: Session, subscription_id: int, new_amount: int):
     today = date.today()
     
     if current_price:
-        # Проверяем, не является ли дата начала сегодняшним днем
         if current_price.startDate == today and current_price.amount == new_amount:
-            print(f"⚠️  Активная запись уже существует с сегодняшней датой и той же суммой, пропускаем создание")
             return current_price
         
-        # Закрываем текущую запись
         current_price.endDate = today
-        print(f"📅 Закрыта запись истории цен ID {current_price.id} (сумма: {current_price.amount}) с {current_price.startDate} по {today}")
-    
-    # Создаем новую запись
+       
     new_price = PriceHistory(
         subscriptionId=subscription_id,
         amount=new_amount,
@@ -59,18 +47,9 @@ def update_price_history(db: Session, subscription_id: int, new_amount: int):
     )
     db.add(new_price)
     
-    print(f"💰 Создана новая запись истории цен для подписки {subscription_id} с суммой {new_amount} с {today}")
-    
     return new_price
 
 def update_subscription_price_history(db: Session, subscription: Subscription, new_amount: int):
-    """
-    Обновляет последнюю запись в истории цен при изменении стоимости подписки.
-    Не создает новую запись, а обновляет существующую.
-    """
-    print(f"💰 Обновление цены подписки '{subscription.name}' (ID: {subscription.id}): {subscription.currentAmount} → {new_amount}")
-    
-    # Ищем последнюю запись в истории цен для этой подписки
     last_price_record = db.query(PriceHistory).filter(
         PriceHistory.subscriptionId == subscription.id
     ).order_by(PriceHistory.startDate.desc(), PriceHistory.createdAt.desc()).first()
@@ -78,28 +57,19 @@ def update_subscription_price_history(db: Session, subscription: Subscription, n
     today = date.today()
     
     if last_price_record:
-        # Проверяем, является ли последняя запись активной (без endDate)
         if last_price_record.endDate is None:
-            # Если дата начала сегодняшняя или в прошлом - просто обновляем сумму
             if last_price_record.startDate <= today:
-                print(f"🔄 Обновляем существующую запись ID {last_price_record.id}: {last_price_record.amount} → {new_amount}")
                 last_price_record.amount = new_amount
                 last_price_record.createdAt = datetime.utcnow()
                 return last_price_record
             else:
-                # Если дата начала в будущем (что странно), удаляем ее и создаем новую с сегодняшней датой
-                print(f"⚠️  Запись с датой в будущем {last_price_record.startDate}, удаляем")
                 db.delete(last_price_record)
         else:
-            # Если последняя запись закрыта, проверяем дату окончания
             if last_price_record.endDate >= today:
-                # Если период еще активен, обновляем сумму
-                print(f"🔄 Обновляем закрытую запись ID {last_price_record.id} в активном периоде")
                 last_price_record.amount = new_amount
                 last_price_record.createdAt = datetime.utcnow()
                 return last_price_record
     
-    # Если нет подходящей записи, создаем новую
     new_record = PriceHistory(
         subscriptionId=subscription.id,
         amount=new_amount,
@@ -107,11 +77,9 @@ def update_subscription_price_history(db: Session, subscription: Subscription, n
         createdAt=datetime.utcnow()
     )
     db.add(new_record)
-    print(f"📝 Создана новая запись истории цен: сумма {new_amount} с {today}")
     return new_record
 
 def calculate_initial_payment_date(connected_date: date, billing_cycle: str) -> date:
-    """Рассчитывает начальную дату следующего платежа"""
     if billing_cycle == Sub_period.monthly:
         return connected_date + relativedelta(months=1)
     elif billing_cycle == Sub_period.quarterly:
@@ -131,15 +99,6 @@ def create_subscription(
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    print("=" * 50)
-    print("✅ CreateSubscriptionRequest model successfully validated!")
-    print(f"   User ID: {current_user.id}")
-    print(f"   Subscription name: {subscription_data.name}")
-    print(f"   Category: {subscription_data.category}")
-    print(f"   Amount: {subscription_data.currentAmount}")
-    print(f"   Billing cycle: {subscription_data.billingCycle}")
-    print("=" * 50)
-
     # Проверяем уникальность имени подписки
     existing_subscription = db.query(Subscription).filter(
         Subscription.name == subscription_data.name
@@ -186,8 +145,7 @@ def create_subscription(
     
     if not next_payment_date:
         next_payment_date = calculate_initial_payment_date(connected_date, billing_cycle_str)
-        print(f"📅 Рассчитана дата следующего платежа: {next_payment_date}")
-
+        
     # Создаем новую подписку
     new_subscription = Subscription(
         userId=current_user.id,
@@ -210,15 +168,10 @@ def create_subscription(
         db.commit()
         db.refresh(new_subscription)
 
-        print(f"✅ Подписка создана с ID: {new_subscription.id}")
-
-        # 1. Создаем первую запись в истории цен
         price_history_item = None
         if new_subscription.currentAmount > 0:
             price_history_item = update_price_history(db, new_subscription.id, new_subscription.currentAmount)
 
-        # 2. ✅ СОЗДАЕМ УВЕДОМЛЕНИЕ О ПОДКЛЮЧЕНИИ
-        print(f"📨 Создаю уведомление для подписки {new_subscription.id}...")
         NotificationService.for_subscription_created(
             db=db,
             user_id=str(current_user.id),
@@ -227,11 +180,9 @@ def create_subscription(
             amount=new_subscription.currentAmount,
             next_payment_date=new_subscription.nextPaymentDate
         )
-        print("✅ Уведомление создано!")
 
         db.commit()
 
-        # Получаем актуальную историю цен
         price_history = db.query(PriceHistory).filter(
             PriceHistory.subscriptionId == new_subscription.id
         ).order_by(PriceHistory.startDate.asc()).all()
@@ -268,7 +219,6 @@ def create_subscription(
 
     except Exception as e:
         db.rollback()
-        print(f"❌ Ошибка при создании подписки: {str(e)}")
         import traceback
         traceback.print_exc()
 
@@ -293,8 +243,6 @@ def get_user_subscriptions(
         query = query.filter(Subscription.archivedDate.is_not(None))
     
     subscriptions = query.order_by(Subscription.nextPaymentDate.asc()).all()
-    
-    print(f"🔍 Запрос подписок: archived={archived}, найдено: {len(subscriptions)}")
     
     return [
         SubscriptionResponse(
@@ -490,15 +438,12 @@ def update_subscription(
     try:
         # Если цена изменилась, обновляем историю цен
         if 'currentAmount' in update_dict and update_data.currentAmount != old_amount:
-            print(f"💸 Цена изменилась: {old_amount} → {update_data.currentAmount}")
             update_subscription_price_history(db, subscription, update_data.currentAmount)
         
         # Если изменился период оплаты, пересчитываем дату следующего платежа
         if 'billingCycle' in update_dict and update_dict['billingCycle'] != old_billing_cycle:
-            print(f"📅 Период оплаты изменился: {old_billing_cycle} → {update_dict['billingCycle']}")
             if subscription.nextPaymentDate:
                 subscription.nextPaymentDate = subscription.calculate_next_payment_date()
-                print(f"📅 Обновлена дата следующего платежа: {subscription.nextPaymentDate}")
         
         db.commit()
         db.refresh(subscription)
@@ -508,7 +453,6 @@ def update_subscription(
             PriceHistory.subscriptionId == subscription_id
         ).order_by(PriceHistory.startDate.desc()).all()
         
-        print(f"📊 История цен после обновления ({len(price_history)} записей):")
         for ph in price_history:
             print(f"  - ID {ph.id}: {ph.amount} руб с {ph.startDate} по {ph.endDate or 'настоящее время'}")
         
@@ -532,7 +476,6 @@ def update_subscription(
         
     except Exception as e:
         db.rollback()
-        print(f"❌ Ошибка при обновлении подписки: {str(e)}")
         import traceback
         traceback.print_exc()
         
@@ -550,10 +493,6 @@ def archive_subscription(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    
-    print(f"🔍 Архивация подписки ID: {subscription_id} для пользователя ID: {current_user.id}")
-    
-    # Находим подписку
     subscription = db.query(Subscription).filter(
         and_(
             Subscription.id == subscription_id,
@@ -583,8 +522,6 @@ def archive_subscription(
         db.commit()
         db.refresh(subscription)
         
-        print(f"✅ Подписка '{subscription.name}' успешно архивирована (уведомления отключены)")
-        
         # Возвращаем обновленную подписку
         return SubscriptionResponse(
             id=subscription.id,
@@ -605,7 +542,6 @@ def archive_subscription(
         
     except Exception as e:
         db.rollback()
-        print(f"❌ Ошибка при архивации: {str(e)}")
         import traceback
         traceback.print_exc()
         
@@ -622,9 +558,7 @@ def renew_subscription_payment_date(
     subscription_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
-):
-    """Обновляет дату следующего платежа на основе текущей даты и периода оплаты"""
-    
+):    
     subscription = db.query(Subscription).filter(
         and_(
             Subscription.id == subscription_id,
@@ -657,8 +591,6 @@ def renew_subscription_payment_date(
         db.commit()
         db.refresh(subscription)
         
-        print(f"✅ Дата следующего платежа обновлена: {new_date}")
-        
         return SubscriptionResponse(
             id=subscription.id,
             userId=subscription.userId,
@@ -678,7 +610,6 @@ def renew_subscription_payment_date(
         
     except Exception as e:
         db.rollback()
-        print(f"❌ Ошибка при обновлении даты платежа: {str(e)}")
         
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

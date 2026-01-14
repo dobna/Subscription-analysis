@@ -1,9 +1,7 @@
-# backend/database.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 
-# Всегда указываем явный путь относительно файла database.py
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'subscriptions.db')}"
 
@@ -12,22 +10,12 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-
-# ✅ СОЗДАНИЕ ТАБЛИЦ ПРИ ИМПОРТЕ МОДУЛЯ
 def init_db():
-    """Создает все таблицы в базе данных"""
-    print("🔄 Creating database tables...")
-
-    # Импортируем все модели для создания таблиц
     from backend.models.user import User
     from backend.models.subscription import Subscription, PriceHistory
     from backend.models.notification import Notification
 
     Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created successfully!")
-
-
-
 
 # DB Dependency
 def get_db():

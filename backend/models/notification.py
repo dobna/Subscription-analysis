@@ -1,4 +1,3 @@
-# models/notification.py
 from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, Integer
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -12,7 +11,7 @@ class Notification(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
     subscription_id = Column(Integer, ForeignKey("subscriptions.id"), nullable=False)
-    type = Column(String, nullable=False)  # "subscription_created", "price_changed", etc.
+    type = Column(String, nullable=False)
     title = Column(String, nullable=False)
     message = Column(String, nullable=False)
     read = Column(Boolean, default=False)
