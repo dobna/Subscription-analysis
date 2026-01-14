@@ -52,11 +52,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       key: _scaffoldKey,
       backgroundColor: const Color.fromARGB(248, 223, 218, 245),
       appBar: AppBar(
-        title: const Text(
-          'Аналитика',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
+        title: const Text('Аналитика'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,

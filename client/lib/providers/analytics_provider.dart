@@ -12,8 +12,8 @@ class AnalyticsProvider extends ChangeNotifier {
   // Состояние основной аналитики
   AnalyticsPeriod _currentPeriod = AnalyticsPeriod(
     type: 'month',
-    month: 9,
-    year: 2024,
+    month: 1,
+    year: 2026,
   );
   List<GeneralAnalytics> _generalAnalytics = [];
   bool _isLoading = false;
