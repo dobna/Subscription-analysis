@@ -21,34 +21,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    // Загружаем уведомления при инициализации экрана
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // ✅ ИСПОЛЬЗУЕМ read вместо watch
+ 
       final authProvider = context.read<AuthProvider>();
       final notificationProvider = context.read<NotificationProvider>();
-      
-      // Проверяем авторизацию
+
       if (authProvider.isAuthenticated && authProvider.token != null) {
-        // Устанавливаем токен перед загрузкой
+
         notificationProvider.setAuthToken(authProvider.token!);
         
         if (!notificationProvider.hasLoaded) {
           notificationProvider.loadNotificationGroups();
         }
       } else {
-        // Показываем сообщение об ошибке
+
         _showErrorSnackBar('Требуется авторизация для просмотра уведомлений');
       }
     });
   }
 
-  // Функция для обновления (перезагрузки) данных
   void _refreshData() async {
-    // ✅ ИСПОЛЬЗУЕМ read вместо watch
+
     final authProvider = context.read<AuthProvider>();
     final provider = context.read<NotificationProvider>();
-    
-    // Проверяем авторизацию
+
     if (!authProvider.isAuthenticated || authProvider.token == null) {
       _showErrorSnackBar('Требуется авторизация');
       return;
@@ -61,22 +58,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  // Открыть уведомления по конкретной подписке
   void _openSubscriptionNotifications(BuildContext context, NotificationGroup group) async {
-  // ✅ Показываем индикатор загрузки сразу
+
   final scaffoldMessenger = ScaffoldMessenger.of(context);
   
   try {
     final provider = context.read<NotificationProvider>();
-    
-    // 1. Сначала помечаем как прочитанные
+
     final success = await provider.markSubscriptionAsRead(group.subscriptionId);
     
     if (!success && provider.error != null) {
       throw Exception(provider.error);
     }
-    
-    // 2. Переходим на экран чата
+
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -98,7 +92,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 }
 
-  // Вспомогательные функции для уведомлений
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -119,7 +112,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  // Форматирование времени
   String _formatTime(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
@@ -131,7 +123,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return '${date.day}.${date.month}.${date.year}';
   }
 
-  // Форматирование даты для заголовка группы
   String _formatDateHeader(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -151,36 +142,34 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return '${monthNames[date.month - 1]} ${date.year}';
   }
 
-  // Получить цвет для категории подписки
   Color _getCategoryColor(String? category) {
     switch (category?.toLowerCase()) {
       case 'music':
       case 'музыка':
-        return const Color(0xFFE91E63); // Розовый
+        return const Color(0xFFE91E63);
       case 'video':
       case 'видео':
-        return const Color(0xFFF44336); // Красный
+        return const Color(0xFFF44336);
       case 'books':
       case 'книги':
-        return const Color(0xFF4CAF50); // Зеленый
+        return const Color(0xFF4CAF50);
       case 'games':
       case 'игры':
-        return const Color(0xFF9C27B0); // Фиолетовый
+        return const Color(0xFF9C27B0);
       case 'education':
       case 'образование':
-        return const Color(0xFF2196F3); // Синий
+        return const Color(0xFF2196F3);
       case 'social':
       case 'соцсети':
-        return const Color(0xFF00BCD4); // Голубой
+        return const Color(0xFF00BCD4);
       case 'other':
       case 'другое':
-        return const Color(0xFF607D8B); // Серо-голубой
+        return const Color(0xFF607D8B);
       default:
-        return const Color(0xFF757575); // Серый
+        return const Color(0xFF757575);
     }
   }
 
-  // Получить иконку для категории подписки
   IconData _getCategoryIcon(String? category) {
     switch (category?.toLowerCase()) {
       case 'music':
@@ -211,17 +200,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ В build методе используем watch
+
     final authProvider = context.watch<AuthProvider>();
     final notificationProvider = context.watch<NotificationProvider>();
 
-    // Автоматически инициализируем при изменении авторизации
     if (authProvider.isAuthenticated && 
         authProvider.token != null &&
         notificationProvider.authToken != authProvider.token) {
       
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // ✅ Внутри коллбэка используем read
+
         final notificationProvider = context.read<NotificationProvider>();
         notificationProvider.setAuthToken(authProvider.token!);
         if (!notificationProvider.hasLoaded) {
@@ -241,7 +229,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.black),
-            onPressed: notificationProvider.isLoading ? null : _refreshData, // ✅ onPressed использует метод с read
+            onPressed: notificationProvider.isLoading ? null : _refreshData, 
           ),
           if (!kIsWeb) IconButton(
             icon: const Icon(Icons.menu, color: Colors.black),
@@ -310,7 +298,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       );
     }
 
-    // Фильтрация групп по поисковому запросу
     List<NotificationGroup> filteredGroups = _searchQuery.isEmpty
         ? provider.notificationGroups
         : provider.notificationGroups.where((group) =>
@@ -323,7 +310,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     return Column(
       children: [
-        // Поиск
+
         Padding(
           padding: EdgeInsets.all(kIsWeb ? 24 : 16),
           child: TextField(
@@ -345,7 +332,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ),
 
-        // Счетчики
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
@@ -363,7 +349,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ),
 
-        // Список уведомлений
         Expanded(
           child: filteredGroups.isEmpty
               ? _buildEmptyState(provider)
@@ -523,31 +508,29 @@ class SubscriptionNotificationsScreen extends StatefulWidget {
 
 class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificationsScreen> {
   List<Notification> _notifications = [];
-  bool _isLoading = true; // ✅ Начинаем с true, показываем индикатор сразу
+  bool _isLoading = true;
   String? _error;
   late NotificationProvider _provider;
 
   @override
   void initState() {
     super.initState();
-    // ✅ Получаем провайдер БЕЗ подписки (listen: false)
+
     _provider = Provider.of<NotificationProvider>(context, listen: false);
-    
-    // НЕ загружаем сразу, загрузим в didChangeDependencies
+
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
-    // ✅ Загружаем данные только если еще не загружали и не загрузили
+
     if (_isLoading && _error == null && _notifications.isEmpty) {
       _loadNotifications();
     }
   }
 
   Future<void> _loadNotifications() async {
-    // ✅ Проверяем mounted перед началом любой асинхронной операции
+
     if (!mounted) return;
     
     setState(() {
@@ -557,8 +540,7 @@ class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificati
 
     try {
       final notifications = await _provider.loadSubscriptionNotifications(widget.subscriptionId);
-      
-      // ✅ Проверяем mounted перед обновлением состояния
+
       if (!mounted) return;
       
       setState(() {
@@ -568,7 +550,7 @@ class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificati
       
       print('[SubscriptionNotificationsScreen] Успешно загружено ${notifications.length} уведомлений');
     } catch (e) {
-      // ✅ Проверяем mounted перед отображением ошибки
+
       if (!mounted) return;
       
       setState(() {
@@ -580,12 +562,10 @@ class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificati
     }
   }
 
-  // Форматирование времени
   String _formatTime(DateTime date) {
     return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  // Форматирование даты для заголовка группы
   String _getMessageDateGroup(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -601,7 +581,6 @@ class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificati
     }
   }
 
-  // Группировка уведомлений по дате
   Map<String, List<Notification>> get _groupedNotifications {
     final Map<String, List<Notification>> grouped = {};
     
@@ -612,27 +591,24 @@ class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificati
       }
       grouped[dateKey]!.add(notification);
     }
-    
-    // Сортируем уведомления внутри каждой группы (новые сверху)
+
     for (final key in grouped.keys) {
       grouped[key]!.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
-    
-    // Упорядочиваем даты: Сегодня, Вчера, затем остальные (новые сверху)
+
     final orderedKeys = grouped.keys.toList()
       ..sort((a, b) {
         if (a == 'Сегодня') return -1;
         if (b == 'Сегодня') return 1;
         if (a == 'Вчера') return -1;
         if (b == 'Вчера') return 1;
-        
-        // Для остальных дат сортируем по убыванию (новые выше)
+
         try {
           final aParts = a.split('.');
           final bParts = b.split('.');
           final aDate = DateTime(int.parse(aParts[2]), int.parse(aParts[1]), int.parse(aParts[0]));
           final bDate = DateTime(int.parse(bParts[2]), int.parse(bParts[1]), int.parse(bParts[0]));
-          return bDate.compareTo(aDate); // Новые даты выше
+          return bDate.compareTo(aDate); 
         } catch (e) {
           return 0;
         }
@@ -646,12 +622,10 @@ class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificati
     return orderedMap;
   }
 
-  // Получить цвет для типа уведомления
   Color _getNotificationColor(Notification notification) {
     return Color(notification.typeColor);
   }
 
-  // Получить иконку для типа уведомления
   IconData _getNotificationIcon(Notification notification) {
     switch (notification.type) {
       case 'subscription_created':
@@ -683,7 +657,7 @@ class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificati
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Аватар уведомления
+
           Container(
             width: 40,
             height: 40,
@@ -699,7 +673,7 @@ class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificati
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Заголовок уведомления
+
                 Container(
                   margin: const EdgeInsets.only(bottom: 4),
                   child: Text(
@@ -711,8 +685,7 @@ class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificati
                     ),
                   ),
                 ),
-                
-                // Пузырек сообщения
+
                 Container(
                   constraints: const BoxConstraints(
                     minWidth: 50,
@@ -721,7 +694,7 @@ class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificati
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isPaymentReminder 
-                      ? const Color(0xFFE8F5E8) // Зеленоватый для платежей
+                      ? const Color(0xFFE8F5E8)
                       : (notification.read ? Colors.white : const Color(0xFFF0F8FF)),
                     borderRadius: const BorderRadius.only(
                       topRight: Radius.circular(16),
@@ -879,7 +852,7 @@ class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificati
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Заголовок с датой
+
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -894,8 +867,7 @@ class _SubscriptionNotificationsScreenState extends State<SubscriptionNotificati
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              
-                              // Сообщения за эту дату
+
                               ...notifications.map((notification) => 
                                 _buildMessageBubble(notification, context)
                               ),

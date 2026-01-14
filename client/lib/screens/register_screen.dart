@@ -1,4 +1,3 @@
-// lib/screens/register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -23,7 +22,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    // ✅ Проверяем сразу, если пользователь уже авторизован
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkIfAlreadyAuthenticated();
     });
@@ -73,8 +72,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
-    
-    // ✅ НЕМЕДЛЕННАЯ ПРОВЕРКА И ПЕРЕНАПРАВЛЕНИЕ
+
     if (authProvider.isAuthenticated) {
       print('✅ Регистрация и вход успешны! Перенаправляю немедленно...');
       _redirectToSubscriptions();
@@ -86,8 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    
-    // ✅ СЛУШАТЕЛЬ ИЗМЕНЕНИЙ - если isAuthenticated стал true, перенаправляем
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (authProvider.isAuthenticated) {
         print('🎯 Auth state changed to authenticated, redirecting...');
@@ -227,8 +224,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 
                 const SizedBox(height: 30),
-                
-                // Register Button
+
                 ElevatedButton(
                   onPressed: authProvider.isLoading ? null : _register,
                   style: ElevatedButton.styleFrom(
@@ -253,8 +249,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 
                 const SizedBox(height: 20),
-                
-                // Login Link
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -283,8 +278,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ],
                 ),
-                
-                // Error message
+
                 if (authProvider.error != null) ...[
                   const SizedBox(height: 20),
                   Container(

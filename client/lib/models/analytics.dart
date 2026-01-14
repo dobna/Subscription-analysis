@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'subscription.dart';
 
 class AnalyticsPeriod {
-  final String type; // 'month', 'quarter', 'year'
+  final String type; 
   final int? month;
   final int? quarter; 
   final int year;
@@ -51,7 +51,7 @@ class AnalyticsPeriod {
 
 class GeneralAnalytics {
   final SubscriptionCategory category;
-  final double total;  // Сумма по этой категории за период
+  final double total;
   final double percentage;
   final Color color;
   final IconData icon;
@@ -68,15 +68,15 @@ class GeneralAnalytics {
 class CategoryAnalytics {
   final String subscriptionId;
   final String name;
-  final double total;  // Сумма по этой подписке за период
-  final double percentage;  // Процент от общей суммы подписок за период
-  final Color color;  // Цвет для отображения в диаграмме
+  final double total;
+  final double percentage;
+  final Color color;
 
   const CategoryAnalytics({
     required this.subscriptionId,
     required this.name,
     required this.total,
-    required this.percentage,  // Рассчитывается на основе total и суммы категории
+    required this.percentage,
     required this.color,
   });
 }

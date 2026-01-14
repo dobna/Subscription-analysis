@@ -19,7 +19,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
   @override
   void initState() {
     super.initState();
-    // Загружаем архивные подписки при инициализации
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<SubscriptionProvider>();
       if (!provider.hasLoadedArchived) {
@@ -48,28 +48,6 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
       );
     }
   }
-
-  // Реализовать восстановление подписки в будущем
-  // void _restoreSubscription(String subscriptionId) async {
-  //   final provider = context.read<SubscriptionProvider>();
-  //   final success = await provider.restoreFromArchive(subscriptionId);
-  //   
-  //   if (success) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('Подписка восстановлена'),
-  //         backgroundColor: Colors.green,
-  //       ),
-  //     );
-  //   } else if (provider.error != null) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text(provider.error!),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //   }
-  // }
 
   @override
 Widget build(BuildContext context) {
@@ -114,14 +92,13 @@ Widget build(BuildContext context) {
   Widget _buildBody(BuildContext context) {
     return Consumer<SubscriptionProvider>(
       builder: (context, provider, child) {
-        // Если загрузка и нет данных
+
         if (provider.isLoadingArchived && !provider.hasLoadedArchived) {
           return const Center(
             child: CircularProgressIndicator(),
           );
         }
 
-        // Если ошибка
         if (provider.errorArchived != null && !provider.hasLoadedArchived) {
           return Center(
             child: Column(
@@ -159,7 +136,7 @@ Widget build(BuildContext context) {
 
       return Column(
         children: [
-          // Статистика архива
+
           if (archivedSubscriptions.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -177,7 +154,6 @@ Widget build(BuildContext context) {
               ),
             ),
 
-          // Список архивных подписок
           Expanded(
             child: archivedSubscriptions.isEmpty
                 ? _buildEmptyState()
@@ -245,7 +221,7 @@ Widget build(BuildContext context) {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Верхняя строка с информацией
+
             Row(
               children: [
                 Container(
@@ -286,17 +262,10 @@ Widget build(BuildContext context) {
                     ],
                   ),
                 ),
-                
-                // Кнопка восстановления
-                // IconButton(
-                //   icon: const Icon(Icons.restore, color: Colors.blue),
-                //   onPressed: () => _restoreSubscription(subscription.id, context),
-                //   tooltip: 'Восстановить подписку',
-                // ),
+
               ],
             ),
-            
-            // Детали подписки
+
             const SizedBox(height: 12),
             _buildDetailRow(
               'Дата архивации:',
@@ -312,8 +281,7 @@ Widget build(BuildContext context) {
               'Сумма:',
               '${subscription.currentAmount} ₽ / ${subscription.billingCycleText}',
             ),
-            
-            // История цен если есть изменения
+
             if (subscription.priceHistory.length > 1) ...[
               const SizedBox(height: 8),
               Text(
@@ -334,29 +302,6 @@ Widget build(BuildContext context) {
       ),
     );
   }
-
-  //   // Метод восстановления (в будущем):
-  // void _restoreSubscription(String subscriptionId, BuildContext context) async {
-  //   final provider = context.read<SubscriptionProvider>();
-  //   final success = await provider.restoreFromArchive(subscriptionId);
-    
-  //   if (success) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('Подписка восстановлена'),
-  //         backgroundColor: Colors.green,
-  //       ),
-  //     );
-  //   } else if (provider.error != null) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text(provider.error!),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //   }
-  // }
-
 
 
   Widget _buildDetailRow(String label, String value) {

@@ -1,11 +1,10 @@
-// lib/models/auth_state.dart
 import 'user.dart';
 
 enum AuthStatus {
-  unauthenticated, // Пользователь не аутентифицирован
-  authenticated,    // Пользователь аутентифицирован
-  loading,         // Загрузка
-  error,           // Ошибка
+  unauthenticated,
+  authenticated,
+  loading,
+  error,
 }
 
 class AuthState {
@@ -21,7 +20,6 @@ class AuthState {
     this.lastUpdated,
   });
 
-  // Начальное состояние
   factory AuthState.initial() {
     return AuthState(
       status: AuthStatus.unauthenticated,
@@ -31,7 +29,6 @@ class AuthState {
     );
   }
 
-  // Состояние загрузки
   factory AuthState.loading() {
     return AuthState(
       status: AuthStatus.loading,
@@ -41,7 +38,6 @@ class AuthState {
     );
   }
 
-  // Успешная аутентификация
   factory AuthState.authenticated(User user) {
     return AuthState(
       status: AuthStatus.authenticated,
@@ -51,7 +47,6 @@ class AuthState {
     );
   }
 
-  // Состояние ошибки
   factory AuthState.error(String errorMessage) {
     return AuthState(
       status: AuthStatus.error,
@@ -61,7 +56,6 @@ class AuthState {
     );
   }
 
-  // Выход из системы
   factory AuthState.unauthenticated() {
     return AuthState(
       status: AuthStatus.unauthenticated,
@@ -71,7 +65,6 @@ class AuthState {
     );
   }
 
-  // Копирование с обновлениями
   AuthState copyWith({
     AuthStatus? status,
     User? user,

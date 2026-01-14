@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-// Категории подписок
 enum SubscriptionCategory {
   music,
   video,
@@ -12,15 +11,12 @@ enum SubscriptionCategory {
   other,
 }
 
-// Периодичность списаний
 enum BillingCycle {
   monthly,
   yearly,
   quarterly,
 }
 
-
-// История цен для аналитики
 class PriceHistory {
   final DateTime startDate;
   final DateTime endDate;
@@ -32,20 +28,16 @@ class PriceHistory {
     required this.amount,
   });
 
-  // Преобразование JSON с бэка в Dart объект
 factory PriceHistory.fromJson(Map<String, dynamic> json) => PriceHistory(
-  startDate: DateTime.parse(json['startDate'].toString()),  // ← toString()
-  
-  // endDate МОЖЕТ БЫТЬ NULL в ответе от бекенда!
-  endDate: json['endDate'] != null 
-      ? DateTime.parse(json['endDate'].toString())  // ← toString()
-      : DateTime.now(),  // значение по умолчанию или startDate
-  
-  amount: (json['amount'] as int?) ?? 0,  // ← проверка на null
-);
-  // toJson НЕ нужен, потому что фронтенд не отправляет историю цен на бэкенд
+  startDate: DateTime.parse(json['startDate'].toString()),
 
-  // Для отладки
+  endDate: json['endDate'] != null 
+      ? DateTime.parse(json['endDate'].toString())
+      : DateTime.now(),
+  
+  amount: (json['amount'] as int?) ?? 0,
+);
+
   @override
   String toString() {
     return 'Payment: ${amount} руб за период ${DateFormat('dd.MM.yy').format(startDate)}-${DateFormat('dd.MM.yy').format(endDate)}';
@@ -53,31 +45,23 @@ factory PriceHistory.fromJson(Map<String, dynamic> json) => PriceHistory(
 }
 
 
-// Основной класс подписки
 class Subscription {
   final String id;
   final String name;
-  final int currentAmount; // Текущая цена для следующих платежей
-  final DateTime nextPaymentDate;  // Дата следующего планируемого платежа
-  final DateTime connectedDate; // Дата подключения
-  final DateTime? archivedDate; // Дата архивации
+  final int currentAmount;
+  final DateTime nextPaymentDate;
+  final DateTime connectedDate;
+  final DateTime? archivedDate;
   final SubscriptionCategory category;
-  final bool notificationsEnabled; // Отправлять ли уведомления
-  final int notifyDays; // За сколько дней уведомлять об окончании подписки
-  // final bool isTrial; // Функионал отключен на бэкенде
-  final bool autoRenewal; // Автопродление подписки
-  final BillingCycle billingCycle;
-  // final int billingDay;
+  final bool notificationsEnabled;
+  final int notifyDays; 
 
-  // Технические поля (обычно не показываются в UI)
-  // final DateTime createdAt;
-  // final DateTime updatedAt;
-  
-  // UI поля (вычисляются на фронтенде)
+  final bool autoRenewal;
+  final BillingCycle billingCycle;
+
   final IconData icon;
   final Color color;
 
-  // Вложенные данные (приходят с бэкенда, если запрошены)
   final List<PriceHistory> priceHistory;
 
   Subscription({
@@ -94,35 +78,33 @@ class Subscription {
     required this.autoRenewal,
     required this.icon,
     required this.color,
-    this.priceHistory = const [], // по умолчанию пустой список
+    this.priceHistory = const [],
   });
 
-  
-  // ========== fromJson - для получения данных с бэкенда ==========
 factory Subscription.fromJson(Map<String, dynamic> json) {
   return Subscription(
-    // Преобразуем id в строку (если бэкенд возвращает int)
+
     id: (json['id']?.toString() ?? ''),
     name: json['name'] as String,
     currentAmount: (json['currentAmount'] ?? 0) as int,
-    // nextPaymentDate - МОЖЕТ быть null! Добавляем проверку
+
     nextPaymentDate: json['nextPaymentDate'] != null 
         ? DateTime.parse(json['nextPaymentDate'].toString())
-        : DateTime.now().add(Duration(days: 30)), // значение по умолчанию
+        : DateTime.now().add(Duration(days: 30)),
     connectedDate: DateTime.parse(json['connectedDate'].toString()),
-    // archivedDate - МОЖЕТ быть null! УБИРАЕМ as String
+
     archivedDate: json['archivedDate'] != null 
-        ? DateTime.parse(json['archivedDate'].toString()) // ← .toString() вместо as String!
+        ? DateTime.parse(json['archivedDate'].toString())
         : null,
     category: _parseCategory(json['category'] as String),
     notifyDays: (json['notifyDays'] ?? 3) as int,
     billingCycle: _parseBillingCycle(json['billingCycle'] as String),
     notificationsEnabled: (json['notificationsEnabled'] ?? true) as bool,
     autoRenewal: (json['autoRenewal'] ?? false) as bool,
-    // UI поля вычисляем на фронтенде
+
     icon: _getIconForCategory(json['category'] as String),
     color: _getColorForCategory(json['category'] as String),
-    // История цен
+
     priceHistory: json['priceHistory'] != null
         ? (json['priceHistory'] as List)
             .map((item) => PriceHistory.fromJson(item as Map<String, dynamic>))
@@ -131,9 +113,6 @@ factory Subscription.fromJson(Map<String, dynamic> json) {
   );
 }
 
-  // ========== toJson - для отправки на бэкенд ==========
-  
-  // Для создания новой подписки
   Map<String, dynamic> toCreateJson() {
     return {
       'name': name,
@@ -147,7 +126,6 @@ factory Subscription.fromJson(Map<String, dynamic> json) {
     };
   }
 
-  // Для редактирования подписки
   Map<String, dynamic> toUpdateJson() {
     return {
       'name': name,
@@ -160,18 +138,6 @@ factory Subscription.fromJson(Map<String, dynamic> json) {
       'autoRenewal': autoRenewal,
     };
   }
-
-  // Для архивации подписки - не исопользуется, см. сервис
-  // Map<String, dynamic> toArchiveJson() {
-  //   return {
-  //     'confirm': true,
-  //     'archivedDate': archivedDate?.toIso8601String(),
-  //   };
-  // }
-
-
-    // ========== Вспомогательные методы ==========
-  
 
   static String _formatDate(DateTime date) {
     return DateFormat('yyyy-MM-dd').format(date);
@@ -234,8 +200,6 @@ factory Subscription.fromJson(Map<String, dynamic> json) {
     }
   }
 
-    // ========== UI методы ==========
-  
   String get formattedNextPayment {
     return DateFormat('dd.MM.yyyy').format(nextPaymentDate);
   }
@@ -271,9 +235,7 @@ factory Subscription.fromJson(Map<String, dynamic> json) {
   }
 
   bool get isOverdue => daysUntilPayment < 0;
-  
-  // ========== copyWith ==========
-  
+
   Subscription copyWith({
     String? id,
     String? name,
@@ -313,41 +275,3 @@ factory Subscription.fromJson(Map<String, dynamic> json) {
     return 'Subscription{id: $id, name: $name, amount: $formattedAmount, nextPayment: $formattedNextPayment}';
   }
 }
-  
-
-  // Данные методы реализуются на бэкенде
-  // bool get isOverdue => nextPaymentDate.isBefore(DateTime.now());
-
-  // // Автообновление даты
-  // Subscription getUpdatedSubscription() {
-  //   if (isOverdue) {
-  //     return copyWith(
-  //       nextPaymentDate: getNextPaymentDate(),
-  //     );
-  //   }
-  //   return this;
-  // }
-  // int get daysUntilPayment => nextPaymentDate.difference(DateTime.now()).inDays;
-
-  //   DateTime getNextPaymentDate() {
-  //   switch (billingCycle) {
-  //     case BillingCycle.monthly:
-  //       return DateTime(
-  //         nextPaymentDate.year,
-  //         nextPaymentDate.month + 1,
-  //         billingDay,
-  //       );
-  //     case BillingCycle.yearly:
-  //       return DateTime(
-  //         nextPaymentDate.year + 1,
-  //         nextPaymentDate.month,
-  //         billingDay,
-  //       );
-  //     case BillingCycle.quarterly:
-  //       return DateTime(
-  //         nextPaymentDate.year,
-  //         nextPaymentDate.month + 3,
-  //         billingDay,
-  //       );
-  //   }
-  // }

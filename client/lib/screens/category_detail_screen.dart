@@ -37,13 +37,12 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
     final analyticsProvider = context.read<AnalyticsProvider>();
 
     if (authProvider.isAuthenticated && authProvider.token != null) {
-      // Загружаем детали категории каждый раз при открытии экрана
+
       final categoryName = _getCategoryApiName(widget.category);
       analyticsProvider.loadCategoryAnalytics(categoryName);
     }
   }
 
-  // Функция для обновления данных
   void _refreshData() async {
     final authProvider = context.read<AuthProvider>();
     final provider = context.read<AnalyticsProvider>();
@@ -61,7 +60,6 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
     }
   }
 
-  // Вспомогательные функции для уведомлений
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -108,7 +106,6 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
     final authProvider = context.watch<AuthProvider>();
     final analyticsProvider = context.watch<AnalyticsProvider>();
 
-    // Автоматически инициализируем при изменении авторизации
     if (authProvider.isAuthenticated &&
         authProvider.token != null &&
         analyticsProvider.authToken != authProvider.token) {
@@ -116,7 +113,6 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
         final analyticsProvider = context.read<AnalyticsProvider>();
         analyticsProvider.setAuthToken(authProvider.token!);
 
-        // Загружаем детали категории
         final categoryName = _getCategoryApiName(widget.category);
         analyticsProvider.loadCategoryAnalytics(categoryName);
       });
@@ -139,7 +135,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
       ),
       body: Consumer<AnalyticsProvider>(
         builder: (context, provider, child) {
-          // Показываем индикатор загрузки только при первой загрузке
+
           if (provider.isLoadingDetails && provider.categoryDetails == null) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -185,15 +181,13 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Общая сумма по категории
+
                   _buildHeader(provider),
                   const SizedBox(height: 32),
 
-                  // Круговая диаграмма по подпискам
                   _buildPieChart(details),
                   const SizedBox(height: 32),
 
-                  // Список подписок
                   _buildSubscriptionsList(details),
                 ],
               ),

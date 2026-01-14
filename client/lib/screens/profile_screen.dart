@@ -161,7 +161,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             SizedBox(height: 32),
 
-            // Архив подписок
             _buildArchiveButton(archivedCount),
           ],
         ),
@@ -169,7 +168,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Виджет для редактируемого поля
   Widget _buildEditableField({
     required String label,
     required String value,

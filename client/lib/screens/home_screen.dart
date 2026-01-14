@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'login_screen.dart';
-import 'subscription_screen.dart'; // ✅ Добавляем импорт экрана подписок
+import 'subscription_screen.dart'; 
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -11,9 +11,8 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
 
-    // ✅ Проверяем, авторизован ли пользователь
     if (!authProvider.isAuthenticated) {
-      // Если не авторизован, показываем LoginScreen
+ 
       return LoginScreen();
     }
 
@@ -38,7 +37,7 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Аватар пользователя
+
               CircleAvatar(
                 radius: 60,
                 backgroundColor: Colors.blue[100],
@@ -49,10 +48,9 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 30),
-              
-              // Приветствие
+
               Text(
-                // ✅ Изменено: используем userEmail вместо user?.email
+
                 'Добро пожаловать, ${authProvider.userEmail ?? "Пользователь"}!',
                 style: const TextStyle(
                   fontSize: 24,
@@ -63,8 +61,7 @@ class HomeScreen extends StatelessWidget {
               ),
               
               const SizedBox(height: 10),
-              
-              // Статус
+
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
@@ -89,8 +86,7 @@ class HomeScreen extends StatelessWidget {
               ),
               
               const SizedBox(height: 40),
-              
-              // Карточки функций
+
               Wrap(
                 spacing: 20,
                 runSpacing: 20,
@@ -117,7 +113,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: 'Статистика расходов',
                     color: Colors.green,
                     onTap: () {
-                      // TODO: Переход на экран аналитики
+
                       _showComingSoonSnackBar(context, 'Аналитика');
                     },
                   ),
@@ -129,7 +125,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: 'Напоминания о платежах',
                     color: Colors.orange,
                     onTap: () {
-                      // TODO: Переход на экран уведомлений
+
                       _showComingSoonSnackBar(context, 'Уведомления');
                     },
                   ),
@@ -141,7 +137,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: 'Настройки приложения',
                     color: Colors.purple,
                     onTap: () {
-                      // TODO: Переход на экран настроек
+
                       _showComingSoonSnackBar(context, 'Настройки');
                     },
                   ),
@@ -149,8 +145,7 @@ class HomeScreen extends StatelessWidget {
               ),
               
               const SizedBox(height: 30),
-              
-              // Информация о пользователе
+
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -187,7 +182,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // Виджет карточки функции
   Widget _buildFeatureCard(
     BuildContext context, {
     required IconData icon,
@@ -252,7 +246,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // Диалог выхода
   void _showLogoutDialog(BuildContext context, AuthProvider authProvider) {
     showDialog(
       context: context,
@@ -270,7 +263,7 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).pop();
                 authProvider.logout();
-                // После выхода показываем LoginScreen
+
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -283,7 +276,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // Уведомление о функции в разработке
   void _showComingSoonSnackBar(BuildContext context, String featureName) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

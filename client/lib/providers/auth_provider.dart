@@ -1,4 +1,3 @@
-// lib/providers/auth_provider.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
@@ -6,7 +5,6 @@ import '../services/auth_service.dart';
 class AuthProvider with ChangeNotifier {
   late SharedPreferences _prefs;
 
-  // Приватные поля
   bool _isLoading = false;
   String? _error;
   String? _token;
@@ -15,7 +13,6 @@ class AuthProvider with ChangeNotifier {
   String? _userEmail;
   int? _userId;
 
-  // ✅ Геттеры
   bool get isLoading => _isLoading;
   bool get isInitializing => _isInitializing;
   String? get error => _error;
@@ -28,7 +25,6 @@ class AuthProvider with ChangeNotifier {
     _initialize();
   }
 
-  // Инициализация при запуске приложения
   Future<void> _initialize() async {
     print('🔄 Инициализация AuthProvider...');
     _prefs = await SharedPreferences.getInstance();
@@ -38,7 +34,6 @@ class AuthProvider with ChangeNotifier {
     print('✅ AuthProvider инициализирован');
   }
 
-  // 💾 Загрузка сохраненных данных при запуске
   Future<void> _loadAuthData() async {
     try {
       _token = _prefs.getString('auth_token');
@@ -61,7 +56,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // 💾 Сохранение данных при успешной аутентификации
   Future<void> _saveAuthData(String token, String email, int userId) async {
     try {
       await _prefs.setString('auth_token', token);
@@ -82,7 +76,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // 🗑️ Очистка данных при выходе
   Future<void> _clearAuthData() async {
     try {
       await _prefs.remove('auth_token');
@@ -100,7 +93,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // 📝 Регистрация с auto-login
   Future<void> register(String email, String password) async {
     print('🚀 Начало регистрации: $email');
     _isLoading = true;
@@ -116,7 +108,6 @@ class AuthProvider with ChangeNotifier {
       if (response.success) {
         print('✅ Регистрация успешна! Выполняю auto-login...');
 
-        // Auto-login после регистрации
         await login(email, password);
       } else {
         _error = response.message;
@@ -131,7 +122,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // 🔐 Вход в систему
   Future<void> login(String email, String password) async {
     print('🔐 Начало входа: $email');
     _isLoading = true;
@@ -151,14 +141,12 @@ class AuthProvider with ChangeNotifier {
           final token = data['access_token'];
           final userId = data['user_id'] ?? 0;
 
-          // ✅ Сохраняем данные
           await _saveAuthData(token, email, userId);
 
           print('🎉 Вход выполнен успешно!');
           print('   User ID: $userId');
           print('   Token: ${token.substring(0, 30)}...');
 
-          // ✅ Явно уведомляем об изменениях
           notifyListeners();
         } else {
           _error = 'Токен не получен';
@@ -178,7 +166,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // 🚪 Выход из системы
   Future<void> logout() async {
     print('🚪 Выход из системы...');
 
