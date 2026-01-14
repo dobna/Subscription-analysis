@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional
 from dateutil.relativedelta import relativedelta
+from backend.models.subscription import Sub_period
 
 from backend.database import get_db
 from backend.models.user import User
@@ -197,11 +198,9 @@ def get_category_analytics(
     
     print(f"📊 Рассчет аналитики для категории '{category}' за период: {period_start} - {period_end}")
     
-    # Получаем ВСЕ подписки пользователя в указанной категории (включая архивные)
     category_subscriptions = db.query(Subscription).filter(
         Subscription.userId == current_user.id,
         Subscription.category == category
-        # УБИРАЕМ фильтр по архиву: Subscription.archivedDate.is_(None)
     ).all()
     
     if not category_subscriptions:
@@ -231,15 +230,30 @@ def get_category_analytics(
     # Группируем по подпискам
     subscription_totals = {}
     for record in price_history_records:
-        subscription_totals[record.subscriptionId] = subscription_totals.get(record.subscriptionId, 0) + record.amount
+        subscription = subscription_map.get(record.subscriptionId)
+        if subscription:
+            # ПРОВЕРЯЕМ: была ли подписка активна в этот период?
+            # Определяем период активности подписки на основе billingCycle
+            if subscription.billingCycle == Sub_period.monthly:
+                active_until = record.startDate + relativedelta(months=1)
+            elif subscription.billingCycle == Sub_period.quarterly:
+                active_until = record.startDate + relativedelta(months=3)
+            elif subscription.billingCycle == Sub_period.yearly:
+                active_until = record.startDate + relativedelta(years=1)
+            else:
+                active_until = record.startDate + relativedelta(months=1)  # fallback
+            
+            # Если подписка была активна в течение анализируемого периода
+            if active_until > period_start:
+                subscription_totals[record.subscriptionId] = subscription_totals.get(record.subscriptionId, 0) + record.amount
     
     # Вычисляем общую сумму по категории
     total_amount = sum(subscription_totals.values())
     
-    # Формируем список всех подписок с процентами (включая те, у которых нет расходов в этом периоде)
+    # Формируем список подписок с процентами (ТОЛЬКО те, что были активны в периоде)
     subscriptions_list = []
     
-    # Сначала добавляем подписки с расходами
+    # Добавляем только подписки, у которых были расходы в этом периоде
     for sub_id, amount in sorted(subscription_totals.items(), key=lambda x: x[1], reverse=True):
         subscription = subscription_map.get(sub_id)
         if subscription:
@@ -252,15 +266,8 @@ def get_category_analytics(
                 percentage=round(percentage, 2)
             ))
     
-    # Добавляем подписки без расходов в этом периоде (с нулевой суммой)
-    for subscription in category_subscriptions:
-        if subscription.id not in subscription_totals:
-            subscriptions_list.append(SubscriptionAnalytics(
-                id=subscription.id,
-                name=subscription.name,
-                total=0,
-                percentage=0.0
-            ))
+    # НЕ добавляем подписки без расходов в этом периоде
+    # Они не были активны в анализируемом периоде
     
     # Создаем информацию о периоде
     period_info = PeriodInfo(
