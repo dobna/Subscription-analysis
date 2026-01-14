@@ -31,23 +31,81 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final authProvider = context.read<AuthProvider>();
     final analyticsProvider = context.read<AnalyticsProvider>();
 
-    // Проверяем, авторизован ли пользователь и есть ли токен
     if (authProvider.isAuthenticated && authProvider.token != null) {
-      // Если AnalyticsProvider еще не инициализирован, передаем токен
       if (!analyticsProvider.isInitialized) {
         analyticsProvider.initializeWithToken(authProvider.token!);
       }
 
-      // Загружаем аналитику
+      // Загружаем аналитику каждый раз при открытии экрана
       analyticsProvider.loadGeneralAnalytics();
     } else if (!authProvider.isInitializing) {
-      // Если не авторизован и AuthProvider уже инициализирован
       analyticsProvider.setError('Пожалуйста, авторизуйтесь');
     }
   }
 
+  // Функция для обновления (перезагрузки) данных
+  void _refreshData() async {
+    final authProvider = context.read<AuthProvider>();
+    final provider = context.read<AnalyticsProvider>();
+
+    if (!authProvider.isAuthenticated || authProvider.token == null) {
+      _showErrorSnackBar('Требуется авторизация');
+      return;
+    }
+
+    await provider.refresh();
+
+    if (provider.error == null) {
+      _showSnackBar('Данные аналитики обновлены');
+    }
+  }
+
+  // Вспомогательные функции для уведомлений
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error),
+        duration: const Duration(seconds: 3),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final analyticsProvider = context.watch<AnalyticsProvider>();
+
+    // Автоматически инициализируем при изменении авторизации
+    if (authProvider.isAuthenticated &&
+        authProvider.token != null &&
+        analyticsProvider.authToken != authProvider.token) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final analyticsProvider = context.read<AnalyticsProvider>();
+        analyticsProvider.setAuthToken(authProvider.token!);
+        if (!analyticsProvider.hasLoaded) {
+          analyticsProvider.loadGeneralAnalytics();
+        }
+      });
+    }
+
+    // Очищаем данные при выходе
+    if (!authProvider.isAuthenticated && analyticsProvider.hasLoaded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        analyticsProvider.clearData();
+      });
+    }
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: const Color.fromARGB(248, 223, 218, 245),
@@ -57,6 +115,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black),
+            onPressed: analyticsProvider.isLoading ? null : _refreshData,
+          ),
           if (!kIsWeb)
             IconButton(
               icon: const Icon(Icons.menu, color: Colors.black),
@@ -76,78 +138,74 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   currentScreen: AppScreen.analytics,
                   isMobile: false,
                 ),
-                Expanded(child: _buildBody(context)),
+                Expanded(child: _buildBody(context, analyticsProvider)),
               ],
             )
-          : _buildBody(context),
+          : _buildBody(context, analyticsProvider),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
-    return Consumer<AnalyticsProvider>(
-      builder: (context, provider, child) {
-        if (provider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+  Widget _buildBody(BuildContext context, AnalyticsProvider provider) {
+    if (provider.isLoading && !provider.hasLoaded) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-        if (provider.error != null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                const SizedBox(height: 16),
-                const Text(
-                  'Ошибка загрузки аналитики',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Text(
-                    provider.error!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: provider.loadGeneralAnalytics,
-                  child: const Text('Повторить'),
-                ),
-              ],
+    if (provider.error != null && !provider.hasLoaded) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            const Text(
+              'Ошибка загрузки аналитики',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-          );
-        }
-
-        return SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: kIsWeb ? 32 : 16,
-              vertical: kIsWeb ? 24 : 16,
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                provider.error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red),
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Заголовок с общей суммой
-                _buildHeader(provider),
-                const SizedBox(height: kIsWeb ? 32 : 24),
-
-                // Переключатель периода
-                _buildPeriodSelector(provider),
-                const SizedBox(height: kIsWeb ? 40 : 32),
-
-                // Круговая диаграмма по категориям
-                _buildPieChart(provider),
-                const SizedBox(height: kIsWeb ? 40 : 32),
-
-                // Список категорий
-                _buildCategoriesList(context, provider),
-              ],
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: provider.loadGeneralAnalytics,
+              child: const Text('Повторить'),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: kIsWeb ? 32 : 16,
+          vertical: kIsWeb ? 24 : 16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Заголовок с общей суммой
+            _buildHeader(provider),
+            const SizedBox(height: kIsWeb ? 32 : 24),
+
+            // Переключатель периода
+            _buildPeriodSelector(provider),
+            const SizedBox(height: kIsWeb ? 40 : 32),
+
+            // Круговая диаграмма по категориям
+            _buildPieChart(provider),
+            const SizedBox(height: kIsWeb ? 40 : 32),
+
+            // Список категорий
+            _buildCategoriesList(context, provider),
+          ],
+        ),
+      ),
     );
   }
 

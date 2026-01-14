@@ -78,6 +78,19 @@ class AnalyticsProvider extends ChangeNotifier {
     return _analyticsService!;
   }
 
+  String _convertPeriodToEnglish(String period) {
+    switch (period.toLowerCase()) {
+      case 'месяц':
+        return 'month';
+      case 'квартал':
+        return 'quarter';
+      case 'год':
+        return 'year';
+      default:
+        return period; // Если уже английское
+    }
+  }
+
   // Загрузка основной аналитики
   Future<void> loadGeneralAnalytics({bool forceRefresh = false}) async {
     if (_isLoading || (_hasLoaded && !forceRefresh)) return;
@@ -95,8 +108,10 @@ class AnalyticsProvider extends ChangeNotifier {
 
     try {
       final service = _getService();
+      final englishPeriod = _convertPeriodToEnglish(_currentPeriod.type);
+
       final data = await service.getAnalyticsSummary(
-        period: _currentPeriod.type,
+        period: englishPeriod, // Используем английское название
         month: _currentPeriod.month,
         quarter: _currentPeriod.quarter,
         year: _currentPeriod.year,
@@ -130,9 +145,11 @@ class AnalyticsProvider extends ChangeNotifier {
 
     try {
       final service = _getService();
+      final englishPeriod = _convertPeriodToEnglish(_currentPeriod.type);
+
       final data = await service.getCategoryAnalytics(
         category: category,
-        period: _currentPeriod.type,
+        period: englishPeriod,
         month: _currentPeriod.month,
         quarter: _currentPeriod.quarter,
         year: _currentPeriod.year,

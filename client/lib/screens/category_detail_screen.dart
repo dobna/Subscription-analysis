@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/analytics_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/subscription.dart';
 import '../models/analytics.dart';
-
 
 class CategoryDetailScreen extends StatefulWidget {
   final SubscriptionCategory category;
@@ -24,101 +24,185 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _touchedIndex = -1;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeCategoryDetails();
+    });
+  }
+
+  void _initializeCategoryDetails() {
+    final authProvider = context.read<AuthProvider>();
+    final analyticsProvider = context.read<AnalyticsProvider>();
+
+    if (authProvider.isAuthenticated && authProvider.token != null) {
+      // Загружаем детали категории каждый раз при открытии экрана
+      final categoryName = _getCategoryApiName(widget.category);
+      analyticsProvider.loadCategoryAnalytics(categoryName);
+    }
+  }
+
+  // Функция для обновления данных
+  void _refreshData() async {
+    final authProvider = context.read<AuthProvider>();
+    final provider = context.read<AnalyticsProvider>();
+
+    if (!authProvider.isAuthenticated || authProvider.token == null) {
+      _showErrorSnackBar('Требуется авторизация');
+      return;
+    }
+
+    final categoryName = _getCategoryApiName(widget.category);
+    await provider.loadCategoryAnalytics(categoryName);
+
+    if (provider.detailsError == null) {
+      _showSnackBar('Данные обновлены');
+    }
+  }
+
+  // Вспомогательные функции для уведомлений
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error),
+        duration: const Duration(seconds: 3),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
   String _getCategoryApiName(SubscriptionCategory category) {
     switch (category) {
-      case SubscriptionCategory.music: return 'music';
-      case SubscriptionCategory.video: return 'video';
-      case SubscriptionCategory.books: return 'books';
-      case SubscriptionCategory.games: return 'games';
-      case SubscriptionCategory.education: return 'education';
-      case SubscriptionCategory.social: return 'social';
-      case SubscriptionCategory.other: return 'other';
-      default: return 'other';
+      case SubscriptionCategory.music:
+        return 'music';
+      case SubscriptionCategory.video:
+        return 'video';
+      case SubscriptionCategory.books:
+        return 'books';
+      case SubscriptionCategory.games:
+        return 'games';
+      case SubscriptionCategory.education:
+        return 'education';
+      case SubscriptionCategory.social:
+        return 'social';
+      case SubscriptionCategory.other:
+        return 'other';
+      default:
+        return 'other';
     }
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    key: _scaffoldKey,
-    backgroundColor: const Color.fromARGB(248, 223, 218, 245),
-    appBar: AppBar(
-      title: Text(widget.categoryName),
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black,
-      elevation: 0,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh, color: Colors.black),
-          onPressed: () {
-            final provider = context.read<AnalyticsProvider>();
-            provider.loadCategoryAnalytics(_getCategoryApiName(widget.category));
-          },
-        ),
-      ],
-    ),
-    body: Consumer<AnalyticsProvider>(
-      builder: (context, provider, child) {
-        if (provider.isLoadingDetails) {
-          return const Center(child: CircularProgressIndicator());
-        }
+  Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final analyticsProvider = context.watch<AnalyticsProvider>();
 
-        if (provider.detailsError != null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                const SizedBox(height: 16),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Text(
-                    provider.detailsError!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => provider.loadCategoryAnalytics(_getCategoryApiName(widget.category)),
-                  child: const Text('Повторить'),
-                ),
-              ],
-            ),
-          );
-        }
+    // Автоматически инициализируем при изменении авторизации
+    if (authProvider.isAuthenticated &&
+        authProvider.token != null &&
+        analyticsProvider.authToken != authProvider.token) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final analyticsProvider = context.read<AnalyticsProvider>();
+        analyticsProvider.setAuthToken(authProvider.token!);
 
-        final details = provider.categoryDetails;
-        if (details == null || details.isEmpty) {
-          return const Center(
-            child: Text('Нет данных по подпискам в этой категории'),
-          );
-        }
+        // Загружаем детали категории
+        final categoryName = _getCategoryApiName(widget.category);
+        analyticsProvider.loadCategoryAnalytics(categoryName);
+      });
+    }
 
-        return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Общая сумма по категории
-                _buildHeader(provider),
-                const SizedBox(height: 32),
-                
-                // Круговая диаграмма по подпискам
-                _buildPieChart(details),
-                const SizedBox(height: 32),
-                
-                // Список подписок
-                _buildSubscriptionsList(details),
-              ],
-            ),
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: const Color.fromARGB(248, 223, 218, 245),
+      appBar: AppBar(
+        title: Text(widget.categoryName),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black),
+            onPressed: analyticsProvider.isLoadingDetails ? null : _refreshData,
           ),
-        );
-      },
-    ),
-  );
-}
+        ],
+      ),
+      body: Consumer<AnalyticsProvider>(
+        builder: (context, provider, child) {
+          // Показываем индикатор загрузки только при первой загрузке
+          if (provider.isLoadingDetails && provider.categoryDetails == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (provider.detailsError != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      provider.detailsError!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      final categoryName = _getCategoryApiName(widget.category);
+                      provider.loadCategoryAnalytics(categoryName);
+                    },
+                    child: const Text('Повторить'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final details = provider.categoryDetails;
+          if (details == null || details.isEmpty) {
+            return const Center(
+              child: Text('Нет данных по подпискам в этой категории'),
+            );
+          }
+
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Общая сумма по категории
+                  _buildHeader(provider),
+                  const SizedBox(height: 32),
+
+                  // Круговая диаграмма по подпискам
+                  _buildPieChart(details),
+                  const SizedBox(height: 32),
+
+                  // Список подписок
+                  _buildSubscriptionsList(details),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   Widget _buildHeader(AnalyticsProvider provider) {
     return Column(
@@ -135,10 +219,7 @@ Widget build(BuildContext context) {
         const SizedBox(height: 8),
         Text(
           _getCurrentPeriodText(provider),
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
       ],
     );
@@ -169,7 +250,8 @@ Widget build(BuildContext context) {
                   _touchedIndex = -1;
                   return;
                 }
-                _touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                _touchedIndex =
+                    pieTouchResponse.touchedSection!.touchedSectionIndex;
               });
             },
           ),
@@ -246,10 +328,7 @@ Widget build(BuildContext context) {
                     const SizedBox(height: 4),
                     Text(
                       '${subscription.total.toStringAsFixed(1)} ₽',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -271,11 +350,21 @@ Widget build(BuildContext context) {
 
   String _getCurrentPeriodText(AnalyticsProvider provider) {
     final period = provider.currentPeriod;
-    
+
     if (period.type == 'month' && period.month != null) {
       final months = [
-        'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
-        'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'
+        'январь',
+        'февраль',
+        'март',
+        'апрель',
+        'май',
+        'июнь',
+        'июль',
+        'август',
+        'сентябрь',
+        'октябрь',
+        'ноябрь',
+        'декабрь',
       ];
       return months[period.month! - 1];
     } else if (period.type == 'quarter' && period.quarter != null) {
