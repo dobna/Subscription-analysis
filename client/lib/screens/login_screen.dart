@@ -1,4 +1,3 @@
-// lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -21,7 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // ✅ Проверяем сразу, если пользователь уже авторизован
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkIfAlreadyAuthenticated();
     });
@@ -39,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => SubscriptionsScreen()),
-      (route) => false, // Удаляем все предыдущие маршруты
+      (route) => false,
     );
   }
 
@@ -60,8 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
-    
-    // ✅ НЕМЕДЛЕННАЯ ПРОВЕРКА И ПЕРЕНАПРАВЛЕНИЕ
+
     if (authProvider.isAuthenticated) {
       print('✅ Вход успешен! Перенаправляю немедленно...');
       _redirectToSubscriptions();
@@ -73,8 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    
-    // ✅ СЛУШАТЕЛЬ ИЗМЕНЕНИЙ - если isAuthenticated стал true, перенаправляем
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (authProvider.isAuthenticated) {
         print('🎯 Auth state changed to authenticated, redirecting...');
@@ -115,8 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 
                 const SizedBox(height: 40),
-                
-                // Email
+
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -136,8 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 
                 const SizedBox(height: 20),
-                
-                // Password
+
                 TextFormField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
@@ -169,8 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 
                 const SizedBox(height: 30),
-                
-                // Login Button
+
                 ElevatedButton(
                   onPressed: authProvider.isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
@@ -195,8 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 
                 const SizedBox(height: 20),
-                
-                // Register Link
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -225,8 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                
-                // Error message
+
                 if (authProvider.error != null) ...[
                   const SizedBox(height: 20),
                   Container(

@@ -23,7 +23,7 @@ from backend.services.notifications_service import NotificationService
 router = APIRouter(prefix="/api", tags=["subscriptions"])
 
 def update_price_history(db: Session, subscription_id: int, new_amount: int):
-    # Находим текущую активную запись в истории цен
+
     current_price = db.query(PriceHistory).filter(
         and_(
             PriceHistory.subscriptionId == subscription_id,

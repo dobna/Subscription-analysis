@@ -36,14 +36,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         analyticsProvider.initializeWithToken(authProvider.token!);
       }
 
-      // Загружаем аналитику каждый раз при открытии экрана
       analyticsProvider.loadGeneralAnalytics();
     } else if (!authProvider.isInitializing) {
       analyticsProvider.setError('Пожалуйста, авторизуйтесь');
     }
   }
 
-  // Функция для обновления (перезагрузки) данных
   void _refreshData() async {
     final authProvider = context.read<AuthProvider>();
     final provider = context.read<AnalyticsProvider>();
@@ -60,7 +58,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
   }
 
-  // Вспомогательные функции для уведомлений
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -86,7 +83,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final authProvider = context.watch<AuthProvider>();
     final analyticsProvider = context.watch<AnalyticsProvider>();
 
-    // Автоматически инициализируем при изменении авторизации
     if (authProvider.isAuthenticated &&
         authProvider.token != null &&
         analyticsProvider.authToken != authProvider.token) {
@@ -99,7 +95,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       });
     }
 
-    // Очищаем данные при выходе
     if (!authProvider.isAuthenticated && analyticsProvider.hasLoaded) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         analyticsProvider.clearData();
@@ -189,19 +184,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Заголовок с общей суммой
+
             _buildHeader(provider),
             const SizedBox(height: kIsWeb ? 32 : 24),
 
-            // Переключатель периода
             _buildPeriodSelector(provider),
             const SizedBox(height: kIsWeb ? 40 : 32),
 
-            // Круговая диаграмма по категориям
             _buildPieChart(provider),
             const SizedBox(height: kIsWeb ? 40 : 32),
 
-            // Список категорий
             _buildCategoriesList(context, provider),
           ],
         ),

@@ -47,8 +47,7 @@ class Notification {
       createdAt: DateTime.parse(json['created_at']),
     );
   }
-  
-  // Преобразование в JSON
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -65,7 +64,6 @@ class Notification {
     };
   }
 
-  // Копирование с изменениями
   Notification copyWith({
     String? id,
     String? userId,
@@ -94,12 +92,10 @@ class Notification {
     );
   }
 
-  // Пометить как прочитанное
   Notification markAsRead() {
     return copyWith(read: true);
   }
 
-  // Тип уведомления в читаемом формате (на будущее, пока что только payment_reminder)
   String get readableType {
     switch (type) {
       case 'subscription_created':
@@ -123,27 +119,25 @@ class Notification {
     }
   }
 
-  // Получить цвет для типа уведомления (на будущее)
   int get typeColor {
     switch (type) {
       case 'subscription_created':
-        return 0xFF4CAF50; // Зеленый
+        return 0xFF4CAF50; 
       case 'price_changed':
-        return 0xFFFF9800; // Оранжевый
+        return 0xFFFF9800;
       case 'payment_reminder':
-        return 0xFF9C27B0; // Фиолетовый
+        return 0xFF9C27B0;
       case 'payment_date_changed':
-        return 0xFF2196F3; // Синий
+        return 0xFF2196F3;
       case 'auto_renewal_changed':
-        return 0xFFE91E63; // Розовый
+        return 0xFFE91E63;
       case 'subscription_archived':
-        return 0xFFF44336; // Красный
+        return 0xFFF44336;
       default:
-        return 0xFF607D8B; // Серо-голубой
+        return 0xFF607D8B;
     }
   }
 
-  // Иконка для типа уведомления (на будущее)
   String get typeIcon {
     switch (type) {
       case 'subscription_created':
@@ -165,7 +159,6 @@ class Notification {
     }
   }
 
-  // Форматирование даты
   String get formattedDate {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);

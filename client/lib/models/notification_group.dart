@@ -22,34 +22,22 @@ class NotificationGroup {
 
 
   factory NotificationGroup.fromJson(Map<String, dynamic> json) {
-  final notificationsJson = json['notifications'] as List<dynamic>? ?? [];
-  
-  // ✅ Обрабатываем каждое уведомление
-  final notifications = notificationsJson
-      .map((item) {
-        try {
-          return Notification.fromJson(item as Map<String, dynamic>);
-        } catch (e) {
-          print('Ошибка парсинга уведомления: $e, данные: $item');
-          return null;
-        }
-      })
-      .where((item) => item != null)
-      .cast<Notification>()
-      .toList();
-  
-  return NotificationGroup(
-    subscriptionId: json['subscription_id'] as int? ?? 0,
-    subscriptionName: json['subscription_name'] as String? ?? '',
-    subscriptionAmount: (json['subscription_amount'] as num?)?.toDouble() ?? 0.0,
-    subscriptionCategory: json['subscription_category'] as String?,
-    notifications: notifications,
-    unreadCount: json['unread_count'] as int? ?? 0,
-    lastNotificationDate: json['last_notification_date'] != null
-        ? DateTime.parse(json['last_notification_date'])
-        : null,
-  );
-}
+    final notificationsJson = json['notifications'] as List<dynamic>? ?? [];
+    
+    return NotificationGroup(
+      subscriptionId: json['subscription_id'] as int? ?? 0,
+      subscriptionName: json['subscription_name'] as String? ?? '',
+      subscriptionAmount: (json['subscription_amount'] as num?)?.toDouble() ?? 0.0,
+      subscriptionCategory: json['subscription_category'] as String?,
+      notifications: notificationsJson
+          .map((item) => Notification.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      unreadCount: json['unread_count'] as int? ?? 0,
+      lastNotificationDate: json['last_notification_date'] != null
+          ? DateTime.parse(json['last_notification_date'])
+          : null,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -63,7 +51,6 @@ class NotificationGroup {
     };
   }
 
-  // Копирование с изменениями
   NotificationGroup copyWith({
     int? subscriptionId,
     String? subscriptionName,
@@ -84,7 +71,6 @@ class NotificationGroup {
     );
   }
 
-  // Пометка всех уведомлений в группе как прочитанных
   NotificationGroup createCopyWithAllRead() {
     final readNotifications = notifications
         .map((notification) => notification.markAsRead())
@@ -96,31 +82,27 @@ class NotificationGroup {
     );
   }
 
-  // Сортировка уведомлений (новые снизу)
   List<Notification> get sortedNotifications {
     final sorted = List<Notification>.from(notifications);
     sorted.sort((a, b) => a.createdAt.compareTo(b.createdAt));
     return sorted;
   }
 
-  // Получить последнее уведомление
   Notification? get lastNotification {
     if (notifications.isEmpty) return null;
     final sorted = sortedNotifications;
     return sorted.first;
   }
 
-  bool get hasUnread => unreadCount > 0; // Геттер для удобства
+  bool get hasUnread => unreadCount > 0;
 
-  // Получить первую строку последнего сообщения
 String get lastMessagePreview {
   final last = lastNotification;
   if (last == null) return 'Нет уведомлений';
   
   final message = last.message;
   if (message.length <= 50) return message;
-  
-  // Ищем последний пробел до 50 символов
+
   final truncated = message.substring(0, 50);
   final lastSpace = truncated.lastIndexOf(' ');
   
@@ -130,7 +112,7 @@ String get lastMessagePreview {
   
   return '$truncated...';
 }
-  // Получить иконку категории подписки
+
   String get categoryIcon {
     switch (subscriptionCategory?.toLowerCase()) {
       case 'music':
@@ -152,34 +134,31 @@ String get lastMessagePreview {
     }
   }
 
-  // Получить цвет категории
   int get categoryColor {
     switch (subscriptionCategory?.toLowerCase()) {
       case 'music':
-        return 0xFFE91E63; // Розовый
+        return 0xFFE91E63; 
       case 'video':
-        return 0xFFF44336; // Красный
+        return 0xFFF44336;
       case 'books':
-        return 0xFF4CAF50; // Зеленый
+        return 0xFF4CAF50;
       case 'games':
-        return 0xFF9C27B0; // Фиолетовый
+        return 0xFF9C27B0;
       case 'education':
-        return 0xFF2196F3; // Синий
+        return 0xFF2196F3;
       case 'social':
-        return 0xFF00BCD4; // Голубой
+        return 0xFF00BCD4;
       case 'other':
-        return 0xFF607D8B; // Серо-голубой
+        return 0xFF607D8B;
       default:
-        return 0xFF757575; // Серый
+        return 0xFF757575;
     }
   }
 
-  // Форматирование суммы
   String get formattedAmount {
     return '${subscriptionAmount.toStringAsFixed(2)} руб.';
   }
 
-  // Форматирование даты последнего уведомления
   String get formattedLastDate {
     if (lastNotificationDate == null) return '';
     
@@ -206,7 +185,6 @@ String get lastMessagePreview {
     return 'NotificationGroup(subscriptionId: $subscriptionId, subscriptionName: $subscriptionName, unreadCount: $unreadCount)';
   }
 
-  // Метод для сравнения по дате последнего уведомления (для сортировки)
   static int compareByLastDate(NotificationGroup a, NotificationGroup b) {
     final aDate = a.lastNotificationDate;
     final bDate = b.lastNotificationDate;
@@ -215,7 +193,7 @@ String get lastMessagePreview {
     if (aDate == null) return 1;
     if (bDate == null) return -1;
     
-    return bDate.compareTo(aDate); // Новые сверху
+    return bDate.compareTo(aDate);
   }
 
   @override

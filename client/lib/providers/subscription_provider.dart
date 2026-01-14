@@ -4,13 +4,12 @@ import '../services/subscription_service.dart';
 import 'auth_provider.dart';
 
 class SubscriptionProvider extends ChangeNotifier {
-  // Состояние для активных подписок
+
   List<Subscription> _activeSubscriptions = [];
   bool _isLoading = false;
   String? _error;
   bool _hasLoaded = false;
 
-  // Состояние для архивных подписок
   List<Subscription> _archivedSubscriptions = [];
   bool _isLoadingArchived = false;
   String? _errorArchived;
@@ -19,13 +18,11 @@ class SubscriptionProvider extends ChangeNotifier {
   String? _authToken;
   SubscriptionService? _subscriptionService;
 
-  // Геттеры для активных подписок
   List<Subscription> get activeSubscriptions => _activeSubscriptions;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasLoaded => _hasLoaded;
 
-  // Геттеры для архивных подписок
   List<Subscription> get archivedSubscriptions => _archivedSubscriptions;
   bool get isLoadingArchived => _isLoadingArchived;
   String? get errorArchived => _errorArchived;
@@ -34,7 +31,7 @@ class SubscriptionProvider extends ChangeNotifier {
   String? get authToken => _authToken; 
 
   void setAuthToken(String? token) {
-    _authToken = token; // ← сохраняем
+    _authToken = token;
     _subscriptionService = SubscriptionService(authToken: token);
   }
 
@@ -48,8 +45,7 @@ class SubscriptionProvider extends ChangeNotifier {
     _errorArchived = null;
     notifyListeners();
   }
-  
-  // Загрузить активные подписки
+
   Future<void> loadSubscriptions({bool forceRefresh = false}) async {
     if (_isLoading || (_hasLoaded && !forceRefresh)) return;
     
@@ -75,7 +71,6 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
-  // Загрузить архивные подписки
   Future<void> loadArchivedSubscriptions({bool forceRefresh = false}) async {
     if (_isLoadingArchived || (_hasLoadedArchived && !forceRefresh)) return;
     
@@ -88,15 +83,13 @@ class SubscriptionProvider extends ChangeNotifier {
         throw Exception('Сервис не инициализирован. Авторизуйтесь.');
       }
 
-      // Используем новый метод для загрузки архивных подписок
       _archivedSubscriptions = await _subscriptionService!.getArchivedSubscriptions();
       _hasLoadedArchived = true;
       _errorArchived = null;
     } catch (e) {
       _errorArchived = e.toString();
       print('Ошибка загрузки архивных подписок: $e');
-      
-      // Если API не поддерживает фильтрацию, фильтруем локально из активных
+
       if (e.toString().contains('Эндпоинт не найден') || 
           e.toString().contains('404')) {
         _filterArchivedLocally();
@@ -107,13 +100,10 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
-  // Локальная фильтрация архивных подписок (запасной вариант)
   void _filterArchivedLocally() {
     try {
-      // Фильтруем подписки с установленным archivedDate
+
       final allSubscriptions = [..._activeSubscriptions];
-      // В реальном приложении здесь нужно загрузить все подписки
-      // и отфильтровать те, у которых isArchived == true
       _archivedSubscriptions = allSubscriptions.where((sub) => sub.isArchived).toList();
       _hasLoadedArchived = true;
       _errorArchived = null;
@@ -123,7 +113,6 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
-  // Обновить архивные подписки
   Future<void> refreshArchived() async {
     _hasLoadedArchived = false;
     await loadArchivedSubscriptions(forceRefresh: true);
@@ -169,14 +158,12 @@ class SubscriptionProvider extends ChangeNotifier {
 
     try {
       final updatedSubscription = await _subscriptionService!.updateSubscription(subscription);
-      
-      // Обновляем в активных подписках
+
       int index = _activeSubscriptions.indexWhere((s) => s.id == subscription.id);
       if (index != -1) {
         _activeSubscriptions[index] = updatedSubscription;
       }
-      
-      // Обновляем в архивных подписках
+
       index = _archivedSubscriptions.indexWhere((s) => s.id == subscription.id);
       if (index != -1) {
         _archivedSubscriptions[index] = updatedSubscription;
@@ -208,8 +195,7 @@ class SubscriptionProvider extends ChangeNotifier {
 
     try {
       final archivedSubscription = await _subscriptionService!.archiveSubscription(subscriptionId);
-      
-      // Удаляем из активных и добавляем в архивные
+
       _activeSubscriptions.removeWhere((s) => s.id == subscriptionId);
       _archivedSubscriptions.add(archivedSubscription);
       
@@ -226,7 +212,6 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
-  // Восстановить подписку из архива
   Future<bool> restoreFromArchive(String subscriptionId) async {
     if (_subscriptionService == null) {
       _error = 'Сервис не инициализирован. Авторизуйтесь.';
@@ -239,7 +224,7 @@ class SubscriptionProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Для восстановления из архива нужно обновить подписку, установив archivedDate в null
+
       final subscription = _archivedSubscriptions.firstWhere(
         (s) => s.id == subscriptionId,
         orElse: () => throw Exception('Подписка не найдена в архиве'),
@@ -250,8 +235,7 @@ class SubscriptionProvider extends ChangeNotifier {
       );
       
       final updatedSubscription = await _subscriptionService!.updateSubscription(restoredSubscription);
-      
-      // Удаляем из архивных и добавляем в активные
+
       _archivedSubscriptions.removeWhere((s) => s.id == subscriptionId);
       _activeSubscriptions.add(updatedSubscription);
       
@@ -281,8 +265,7 @@ class SubscriptionProvider extends ChangeNotifier {
 
     try {
       await _subscriptionService!.deleteSubscription(subscriptionId);
-      
-      // Удаляем из обоих списков
+
       _activeSubscriptions.removeWhere((s) => s.id == subscriptionId);
       _archivedSubscriptions.removeWhere((s) => s.id == subscriptionId);
       
