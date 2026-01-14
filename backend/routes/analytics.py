@@ -23,14 +23,20 @@ def calculate_period_dates(period_type: PeriodType, year: int, month: Optional[i
     """Рассчитывает даты начала и конца периода для аналитики"""
     today = date.today()
     
+    # Явная проверка для month типа периода
     if period_type == PeriodType.month:
-        if not month or month < 1 or month > 12:
+        if month is None:
+            raise HTTPException(status_code=400, detail="Month parameter is required for monthly period")
+        if month < 1 or month > 12:
             raise HTTPException(status_code=400, detail="Invalid month")
         period_start = date(year, month, 1)
         period_end = date(year, month, 1) + relativedelta(months=1) - relativedelta(days=1)
     
+    # Явная проверка для quarter типа периода
     elif period_type == PeriodType.quarter:
-        if not quarter or quarter < 1 or quarter > 4:
+        if quarter is None:
+            raise HTTPException(status_code=400, detail="Quarter parameter is required for quarterly period")
+        if quarter < 1 or quarter > 4:
             raise HTTPException(status_code=400, detail="Invalid quarter")
         
         # Определяем месяц начала квартала
@@ -39,6 +45,7 @@ def calculate_period_dates(period_type: PeriodType, year: int, month: Optional[i
         period_end = date(year, start_month, 1) + relativedelta(months=3) - relativedelta(days=1)
     
     elif period_type == PeriodType.year:
+        # Для годового периода игнорируем month и quarter, если они переданы
         period_start = date(year, 1, 1)
         period_end = date(year, 12, 31)
     
